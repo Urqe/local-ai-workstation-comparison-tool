@@ -557,10 +557,41 @@ function prepareCanvas(canvas){
  return {ctx,w,h};
 }
 
+// Original meme-inspired decoration, drawn beneath the chart data rather than over it.
+// Normalized coordinates keep it proportional at every CSS size and HiDPI resolution;
+// clipping to the plot leaves axis labels untouched, and save/restore isolates drawing state.
+function drawCostWatermark(ctx,x,y,w,h){
+ ctx.save();
+ ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+ const size=Math.min(w*.72,h*.92);
+ ctx.translate(x+w*.12,y+h-size);
+ ctx.scale(size/240,size/240);
+ ctx.globalAlpha=0.065;
+ // An intentionally exaggerated rising arrow is decorative, never a data series.
+ ctx.fillStyle="#72d49b";
+ ctx.fill(new Path2D("M18 160 L85 111 L126 131 L192 63 L172 43 L238 29 L227 96 L207 77 L130 159 L88 139 L31 181 Z"));
+ // Faceted, blank-faced finance enthusiast in a suit: original vector artwork.
+ ctx.fillStyle="#a9bfdc";
+ ctx.fill(new Path2D("M24 240 L30 178 L70 155 L110 154 L152 182 L169 240 Z"));
+ ctx.fillStyle="#edf2f7";
+ ctx.fill(new Path2D("M66 153 L90 170 L113 154 L100 224 L81 224 Z"));
+ ctx.fillStyle="#8ab4f8";
+ ctx.fill(new Path2D("M86 172 L96 172 L101 184 L96 223 L87 223 L83 184 Z"));
+ ctx.fillStyle="#c6d3e3";
+ ctx.fill(new Path2D("M65 84 L82 67 L106 70 L122 91 L119 128 L105 151 L83 155 L65 135 L58 107 Z"));
+ ctx.fillStyle="#8dabc9";
+ ctx.fill(new Path2D("M106 70 L122 91 L119 128 L105 151 L96 132 L104 111 Z"));
+ ctx.strokeStyle="#617e9e";ctx.lineWidth=3;
+ ctx.stroke(new Path2D("M68 105 L80 102 M98 103 L110 107 M89 108 L85 121 L93 123 M81 135 L99 136"));
+ ctx.stroke(new Path2D("M68 161 L52 186 L76 199 L68 214 L81 240 M112 161 L129 186 L109 201 L117 216 L105 240"));
+ ctx.restore();
+}
+
 function drawLines(canvas, series, maxY){
  const {ctx,w,h}=prepareCanvas(canvas);
  ctx.clearRect(0,0,w,h); ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
  const pad={l:58,r:20,t:20,b:38};
+ drawCostWatermark(ctx,pad.l,pad.t,w-pad.l-pad.r,h-pad.t-pad.b);
  ctx.strokeStyle="#2a3139";ctx.lineWidth=1;ctx.font="12px system-ui";ctx.fillStyle="#99a3ad";
  for(let j=0;j<=4;j++){
   const y=pad.t+(h-pad.t-pad.b)*j/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
