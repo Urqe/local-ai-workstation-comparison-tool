@@ -53,8 +53,6 @@ th{color:#cbd3dc;font-weight:600}
 .note{padding:12px 14px;border-left:3px solid var(--accent);background:#0e1216;border-radius:8px;color:#cfd7df;font-size:13px;line-height:1.45}
 button{background:#1a2430;border:1px solid #324154;color:var(--text);border-radius:10px;padding:8px 10px;cursor:pointer}
 button:hover{background:#223041}
-.scenario-header{display:grid;grid-template-columns:1fr repeat(4,minmax(64px,.65fr));gap:8px;align-items:end;margin-bottom:8px;color:#cbd3dc}
-.scenario-header b{font-size:12px}
 .scenario-card{background:#0e1216;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
 .scenario-picker{margin-bottom:9px}
 .scenario-picker label{margin-bottom:5px}
@@ -62,9 +60,8 @@ button:hover{background:#223041}
 .scenario-detail{font-size:11px;color:var(--muted);margin:-2px 0 9px;line-height:1.35}
 .scenario-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 .scenario-cell{min-width:0;background:#12171d;border:1px solid #252d35;border-radius:8px;padding:7px}
-.scenario-cell label{display:block;font-size:9px;color:var(--muted);margin:0 0 3px}
+.scenario-key{display:block;font-size:9px;color:var(--muted);margin:0 0 3px}
 .scenario-value{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.scenario-row input{min-width:0}
 footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:var(--muted);font-size:12px}
 @media(max-width:1180px){
   main{grid-template-columns:minmax(360px,420px) minmax(0,1fr)}
@@ -184,7 +181,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 
 <h3>Price basis</h3>
 <div class="field">
-<label><span>Calculation basis</span><strong id="priceBasisOut">Gross (VAT included)</strong></label>
+<label for="priceBasis"><span>Calculation basis</span><strong id="priceBasisOut">Gross (VAT included)</strong></label>
 <select id="priceBasis">
 <option value="gross" selected>Gross — personal use / VAT included</option>
 <option value="net">Net — business use / VAT excluded</option>
@@ -192,19 +189,19 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </div>
 
 <div class="field">
-<label><span>VAT rate</span><strong id="vatOut">25.5%</strong></label>
+<label for="vat"><span>VAT rate</span><strong id="vatOut">25.5%</strong></label>
 <input id="vat" type="range" min="0" max="30" step="0.1" value="25.5">
 <div class="small">Entered hardware and cloud prices are treated as VAT-included consumer prices. Net mode removes this VAT from both.</div>
 </div>
 
 <div class="field">
-<label><span>Cloud subscription / month (gross)</span><strong id="cloudSpendOut">€80</strong></label>
+<label for="cloudSpend"><span>Cloud subscription / month (gross)</span><strong id="cloudSpendOut">€80</strong></label>
 <input id="cloudSpend" type="range" min="0" max="500" step="5" value="80">
 </div>
 
 <h3>Workload preset</h3>
 <div class="field">
-<label><span>Usage profile</span><strong id="usagePresetOut">Casual coding</strong></label>
+<label for="usagePreset"><span>Usage profile</span><strong id="usagePresetOut">Casual coding</strong></label>
 <select id="usagePreset">
 <option value="starter">Starter / occasional use</option>
 <option value="casual" selected>Casual coding</option>
@@ -219,56 +216,56 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </div>
 
 <div class="field">
-<label><span>Active days / week</span><strong id="daysWeekOut">4 days</strong></label>
+<label for="daysWeek"><span>Active days / week</span><strong id="daysWeekOut">4 days</strong></label>
 <input id="daysWeek" type="range" min="1" max="7" step="0.5" value="4">
 </div>
 
 <h3>Cloud usage estimate</h3>
 <div class="field">
-<label><span>Cloud AI use</span><strong id="cloudHoursOut">4.0 h/day</strong></label>
+<label for="cloudHours"><span>Cloud AI use</span><strong id="cloudHoursOut">4.0 h/day</strong></label>
 <input id="cloudHours" type="range" min="0.25" max="24" step="0.25" value="4">
 </div>
 
 <div class="field">
-<label><span>Agentic tokens / hour</span><strong id="tokensHourOut">120k</strong></label>
+<label for="tokensHour"><span>Agentic tokens / hour</span><strong id="tokensHourOut">120k</strong></label>
 <input id="tokensHour" type="range" min="10000" max="500000" step="10000" value="120000">
 <div class="small">Planning estimate for Claude Code-style work: prompt/context reads, tool loops, generated code and reasoning all count toward usage.</div>
 </div>
 
 <div class="field">
-<label><span>Included monthly token-equivalent</span><strong id="includedTokensOut">25M</strong></label>
+<label for="includedTokens"><span>Included monthly token-equivalent</span><strong id="includedTokensOut">25M</strong></label>
 <input id="includedTokens" type="range" min="1000000" max="100000000" step="1000000" value="25000000">
 <div class="small">Anthropic plans use rolling usage limits, not a literal monthly token bucket. This converts them into an adjustable monthly equivalent for comparison.</div>
 </div>
 
 <div class="field">
-<label><span>Paid overflow cost</span><strong id="overflowCostOut">€5.00/M</strong></label>
+<label for="overflowCost"><span>Paid overflow cost (net)</span><strong id="overflowCostOut">€5.00/M</strong></label>
 <input id="overflowCost" type="range" min="0.5" max="30" step="0.5" value="5">
-<div class="small">Blended API-equivalent €/M token estimate after caching/input/output mix. Adjust this if your workload is Opus-heavy or unusually cache-efficient.</div>
+<div class="small">Blended API-equivalent net €/M token estimate after caching/input/output mix. Gross mode adds the selected VAT; Net mode leaves this rate unchanged.</div>
 </div>
 
 <div class="field">
-<label><span>Ownership period</span><strong id="yearsOut">3 years</strong></label>
+<label for="years"><span>Ownership period</span><strong id="yearsOut">3 years</strong></label>
 <input id="years" type="range" min="1" max="6" step="0.5" value="3">
 </div>
 
 <div class="field">
-<label><span>Electricity price</span><strong id="elecOut">€0.20/kWh</strong></label>
+<label for="elec"><span>Electricity price</span><strong id="elecOut">€0.20/kWh</strong></label>
 <input id="elec" type="range" min="0.05" max="0.60" step="0.01" value="0.20">
 </div>
 
 <div class="field">
-<label><span>Local AI active compute</span><strong id="hoursOut">4.0 h/day</strong></label>
+<label for="hours"><span>Local AI active compute</span><strong id="hoursOut">4.0 h/day</strong></label>
 <input id="hours" type="range" min="0.25" max="24" step="0.25" value="4">
 </div>
 
 <div class="field">
-<label><span>Resale value after period</span><strong id="resaleOut">35%</strong></label>
+<label for="resale"><span>Resale value after period</span><strong id="resaleOut">35%</strong></label>
 <input id="resale" type="range" min="0" max="70" step="5" value="35">
 </div>
 
 <div class="field">
-<label><span>Value of privacy/offline access</span><strong id="privacyOut">€20/mo</strong></label>
+<label for="privacy"><span>Value of privacy/offline access</span><strong id="privacyOut">€20/mo</strong></label>
 <input id="privacy" type="range" min="0" max="150" step="5" value="20">
 <div class="small">Subjective benefit. Think: privacy, offline access, avoiding API limits, experimentation.</div>
 </div>
@@ -276,11 +273,11 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <h3>Model target</h3>
 <div class="small" style="margin:-4px 0 8px">Workload presets also choose a realistic model size, quantization and context/headroom target. Adjusting any of them switches the workload to Custom.</div>
 <div class="field">
-<label><span>Parameters</span><strong id="paramsOut">27B</strong></label>
+<label for="params"><span>Parameters</span><strong id="paramsOut">27B</strong></label>
 <input id="params" type="range" min="7" max="120" step="1" value="27">
 </div>
 <div class="field">
-<label><span>Quantization</span></label>
+<label for="quant"><span>Quantization</span></label>
 <select id="quant">
 <option value="0.55">Q4-ish</option>
 <option value="0.68" selected>Q5-ish</option>
@@ -290,15 +287,15 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </select>
 </div>
 <div class="field">
-<label><span>Context overhead</span><strong id="overheadOut">8 GB</strong></label>
+<label for="overhead"><span>Context overhead</span><strong id="overheadOut">8 GB</strong></label>
 <input id="overhead" type="range" min="2" max="32" step="1" value="8">
 <div class="small">KV cache + OS/apps + runtime headroom. Large context windows can make this brutally important.</div>
 </div>
 
-<h3>Scenario presets</h3>
+<h3>Workstation scenarios</h3>
 <div id="scenarioInputs"></div>
 <div class="small" style="margin:8px 0 10px">
-Apple systems use current Finnish Apple Store gross pricing/configuration options where available. M6 Mac mini supports 16/24/32 GB; M5 Pro mini extends to 48/64 GB on the higher chip. Mac Studio currently ranges from 36 GB M5 Max to 256 GB M5 Ultra; Apple lists 512 GB M5 Ultra as coming later in October. Windows/Linux systems are representative Finnish-market estimates. Mac AI memory = unified memory; NVIDIA AI memory = GPU VRAM. *Power and AI speed are planning estimates for sustained local inference, not vendor specifications or benchmark results.
+Apple systems use current Finnish Apple Store gross pricing/configuration options where available. M6 Mac mini supports 16/24/32 GB; M5 Pro mini extends to 48/64 GB on the higher chip. Mac Studio currently ranges from 36 GB M5 Max to 256 GB M5 Ultra; Apple lists 512 GB M5 Ultra as coming later in October. Windows/Linux systems are representative Finnish-market estimates. Mac AI memory = unified memory; NVIDIA AI memory = GPU VRAM. Four comparison slots are intentional to keep the charts readable on phones and desktops. *Power and AI speed are planning estimates for sustained local inference, not vendor specifications or benchmark results.
 </div>
 <button id="resetBtn">Reset workstation presets</button>
 </section>
@@ -309,20 +306,20 @@ Apple systems use current Finnish Apple Store gross pricing/configuration option
 <div class="two">
 <div class="card">
 <h2>Cumulative cost over ownership period</h2>
-<canvas id="costChart" width="700" height="320"></canvas>
+<canvas id="costChart" role="img" aria-label="Cumulative local-versus-cloud cost chart">Cumulative local-versus-cloud cost chart.</canvas>
 </div>
 <div class="card">
 <h2>AI memory fit vs target model</h2>
-<canvas id="ramChart" width="700" height="320"></canvas>
+<canvas id="ramChart" role="img" aria-label="AI memory fit chart">AI memory fit chart.</canvas>
 </div>
 </div>
 
 <div class="card" style="margin-top:16px">
-<h2>Scenario comparison</h2><div class="small" style="margin:-8px 0 10px">MacBook Pro prices are stored as Finnish gross consumer prices; the selected VAT basis is applied automatically.</div>
+<h2>Scenario comparison</h2><div class="small" style="margin:-8px 0 10px">Workstation prices are stored as gross consumer prices; the selected VAT basis is applied automatically. Apple entries use Finnish store pricing where available; generic PC/server entries are estimates.</div>
 <div class="table-wrap">
 <table>
 <thead><tr>
-<th>Scenario</th><th>RAM</th><th>AI memory</th><th>Net ownership cost</th><th>Monthly equiv.</th><th>Break-even</th><th>Model fit</th><th>Use experience</th>
+<th scope="col">Scenario</th><th scope="col">RAM</th><th scope="col">AI memory</th><th scope="col">Ownership cost</th><th scope="col">Monthly equiv.</th><th scope="col">Break-even</th><th scope="col">Model fit</th><th scope="col">Use experience</th>
 </tr></thead>
 <tbody id="tableBody"></tbody>
 </table>
@@ -337,7 +334,7 @@ Apple systems use current Finnish Apple Store gross pricing/configuration option
 </main>
 
 <footer>
-This is a planning model, not a benchmark database. Apple source prices use current Finnish Apple Store gross pricing; generic Windows/Linux prices are representative estimates; Net mode removes the selected VAT rate. AI power and speed are planning estimates, not Apple specifications. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
+This is a planning model, not a benchmark database. Apple source prices use current Finnish Apple Store gross pricing; generic Windows/Linux prices are representative estimates. Hardware and cloud-subscription inputs are stored gross; Net mode removes the selected VAT. The paid-overflow €/M token input is deliberately treated as a net API-equivalent rate: Gross mode adds VAT, Net mode does not. Local electricity models AI-active compute only and excludes ordinary idle/sleep power, because idle behaviour varies too much by device and user; this slightly favours local hardware if a machine is left powered on for long periods. AI power and speed are planning estimates, not vendor specifications. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
 </footer>
 
 <script>
@@ -380,12 +377,26 @@ let scenarios = defaults.map(x=>({...x}));
 
 const $ = id => document.getElementById(id);
 const fmt = n => new Intl.NumberFormat('en-FI',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+// Hardware and subscription catalog prices are stored as VAT-inclusive consumer prices.
+// Keeping one canonical gross value lets the same scenario switch cleanly between personal
+// (gross) and VAT-deductible business (net) economics without duplicating catalog data.
 function priceFactor(){
   return $("priceBasis").value==="net" ? 1/(1+(+$("vat").value/100)) : 1;
 }
 function effectivePrice(gross){ return gross*priceFactor(); }
+function priceFromNet(net){
+  return $("priceBasis").value==="gross" ? net*(1+(+$("vat").value/100)) : net;
+}
 function basisLabel(){ return $("priceBasis").value==="net" ? "Net" : "Gross"; }
+
+// Catalog strings are currently static, but escaping here prevents future catalog edits
+// (or externally sourced names) from turning template interpolation into HTML.
+function esc(value){
+ return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+
+const APP_STATE_KEY="local-ai-workstation-tool:v1";
+const persistedInputIds=["priceBasis","vat","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","resale","privacy","params","quant","overhead"];
 
 const workloadPresets = {
  starter:{
@@ -468,6 +479,9 @@ function expLabel(s, ram, need){
  return ["Frustrating","bad"];
 }
 function lifecycle(s){
+ // Energy deliberately covers AI-active compute only. Idle/sleep draw is excluded because
+ // laptops, desktops and always-on servers have radically different idle behaviour. The
+ // footer calls out this simplifying assumption so the local case is not mistaken for TCO.
  const yrs=+$("years").value, h=+$("hours").value, ep=+$("elec").value, resale=+$("resale").value/100;
  const days=+$("daysWeek").value;
  const activeDaysPerYear=365.25*(days/7);
@@ -484,10 +498,13 @@ function cloudUsageMonthly(){
  const activeDaysPerMonth=(365.25/12)*(+$("daysWeek").value/7);
  const tokens=hours*activeDaysPerMonth*tokensHour;
  const overflow=Math.max(0,tokens-included);
- const overflowGross=(overflow/1e6)*overflowRate;
+ // overflowRate is a NET API-equivalent price (the common way API rates are quoted).
+ // Gross/personal mode therefore ADDS VAT; net/business mode uses it unchanged. This is
+ // intentionally different from cloudSpend, which is entered as a gross subscription price.
+ const overflowNet=(overflow/1e6)*overflowRate;
  const subscription=effectivePrice(+$("cloudSpend").value);
- const overflowEffective=effectivePrice(overflowGross);
- return {hours,tokens,included,overflow,overflowGross,overflowEffective,subscription,total:subscription+overflowEffective};
+ const overflowEffective=priceFromNet(overflowNet);
+ return {hours,tokens,included,overflow,overflowNet,overflowEffective,subscription,total:subscription+overflowEffective};
 }
 function cloudTotal(months){ return cloudUsageMonthly().total*months; }
 
@@ -497,21 +514,21 @@ function renderScenarioInputs(){
   const card=document.createElement("div"); card.className="scenario-card";
   const options=catalogGroups.map(group=>{
     const inner=workstationCatalog.filter(m=>m.group===group)
-      .map(m=>`<option value="${m.id}" ${m.id===s.id?"selected":""}>${m.name}</option>`).join("");
-    return `<optgroup label="${group}">${inner}</optgroup>`;
+      .map(m=>`<option value="${esc(m.id)}" ${m.id===s.id?"selected":""}>${esc(m.name)}</option>`).join("");
+    return `<optgroup label="${esc(group)}">${inner}</optgroup>`;
   }).join("");
   card.innerHTML=`
    <div class="scenario-picker">
-     <label><span>Scenario ${i+1}</span></label>
-     <select data-i="${i}" aria-label="Select workstation configuration">${options}</select>
+     <label for="scenario-${i}"><span>Scenario ${i+1}</span></label>
+     <select id="scenario-${i}" data-i="${i}" aria-label="Select workstation configuration for scenario ${i+1}">${options}</select>
    </div>
-   <div class="scenario-detail">${s.chip} · ${s.storage} · ${s.priceType}</div>
+   <div class="scenario-detail">${esc(s.chip)} · ${esc(s.storage)} · ${esc(s.priceType)}</div>
    <div class="scenario-metrics">
-     <div class="scenario-cell"><label>Gross price</label><div class="scenario-value">${fmt(s.price)}</div></div>
-     <div class="scenario-cell"><label>System RAM</label><div class="scenario-value">${s.ram} GB</div></div>
-     <div class="scenario-cell"><label>AI memory</label><div class="scenario-value">${s.aiMem} GB</div></div>
-     <div class="scenario-cell"><label>AI watts*</label><div class="scenario-value">~${s.watts} W</div></div>
-     <div class="scenario-cell"><label>AI speed*</label><div class="scenario-value">${s.speed}</div></div>
+     <div class="scenario-cell"><div class="scenario-key">Gross price</div><div class="scenario-value">${fmt(s.price)}</div></div>
+     <div class="scenario-cell"><div class="scenario-key">System RAM</div><div class="scenario-value">${s.ram} GB</div></div>
+     <div class="scenario-cell"><div class="scenario-key">AI memory</div><div class="scenario-value">${s.aiMem} GB</div></div>
+     <div class="scenario-cell"><div class="scenario-key">AI watts*</div><div class="scenario-value">~${s.watts} W</div></div>
+     <div class="scenario-cell"><div class="scenario-key">AI speed*</div><div class="scenario-value">${s.speed}</div></div>
    </div>`;
   c.appendChild(card);
  });
@@ -524,8 +541,24 @@ function renderScenarioInputs(){
  }));
 }
 
+// Canvas CSS size is independent from its backing bitmap. Matching the bitmap to the
+// rendered size × devicePixelRatio keeps charts sharp on Retina/HiDPI displays and avoids
+// the old 700×320 bitmap being stretched into whatever space CSS happened to provide.
+function prepareCanvas(canvas){
+ const rect=canvas.getBoundingClientRect();
+ const w=Math.max(1,rect.width), h=Math.max(1,rect.height);
+ const dpr=Math.min(window.devicePixelRatio||1,3);
+ const pixelW=Math.round(w*dpr), pixelH=Math.round(h*dpr);
+ if(canvas.width!==pixelW || canvas.height!==pixelH){
+   canvas.width=pixelW; canvas.height=pixelH;
+ }
+ const ctx=canvas.getContext("2d");
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ return {ctx,w,h};
+}
+
 function drawLines(canvas, series, maxY){
- const ctx=canvas.getContext("2d"), w=canvas.width,h=canvas.height;
+ const {ctx,w,h}=prepareCanvas(canvas);
  ctx.clearRect(0,0,w,h); ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
  const pad={l:58,r:20,t:20,b:38};
  ctx.strokeStyle="#2a3139";ctx.lineWidth=1;ctx.font="12px system-ui";ctx.fillStyle="#99a3ad";
@@ -550,15 +583,17 @@ function drawLines(canvas, series, maxY){
 }
 
 function drawBars(canvas, need){
- const ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
+ const {ctx,w,h}=prepareCanvas(canvas);ctx.clearRect(0,0,w,h);ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
  const pad={l:110,r:30,t:30,b:30}, max=Math.max(need*1.4,...scenarios.map(s=>s.aiMem))*1.05;
+ const rowStep=(h-pad.t-pad.b)/Math.max(1,scenarios.length);
+ const barH=Math.min(24,Math.max(14,rowStep-10));
  ctx.font="12px system-ui";
  scenarios.forEach((s,i)=>{
-   const y=pad.t+i*58;ctx.fillStyle="#cfd7df";ctx.fillText(s.name.slice(0,16),8,y+18);
-   ctx.fillStyle="#26303a";ctx.fillRect(pad.l,y,(w-pad.l-pad.r),24);
+   const y=pad.t+i*rowStep;ctx.fillStyle="#cfd7df";ctx.fillText(s.name.slice(0,16),8,y+barH*.72);
+   ctx.fillStyle="#26303a";ctx.fillRect(pad.l,y,(w-pad.l-pad.r),barH);
    const bw=(w-pad.l-pad.r)*(s.aiMem/max);
    ctx.fillStyle=s.aiMem>=need*1.05?"#72d49b":s.aiMem>=need*.9?"#f0c36a":"#ef7a7a";
-   ctx.fillRect(pad.l,y,bw,24);ctx.fillStyle="#edf2f7";ctx.fillText(s.aiMem+" GB",pad.l+6,y+17);
+   ctx.fillRect(pad.l,y,bw,barH);ctx.fillStyle="#edf2f7";ctx.fillText(s.aiMem+" GB",pad.l+6,y+barH*.72);
  });
  const x=pad.l+(w-pad.l-pad.r)*(need/max);
  ctx.strokeStyle="#8ab4f8";ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x,pad.t-8);ctx.lineTo(x,h-pad.b);ctx.stroke();ctx.setLineDash([]);
@@ -602,9 +637,11 @@ function update(){
  rows.forEach(r=>{
   const fit=fitLabel(r.s.aiMem,need), exp=expLabel(r.s.speed,r.s.aiMem,need);
   const netMonthlySaving=(cu.total + +$("privacy").value)-r.monthly;
-  const breakEven=netMonthlySaving>0 ? r.s.price/netMonthlySaving : Infinity;
+  // Use the same VAT-adjusted purchase price used by lifecycle(). Using catalog gross
+  // price here would overstate break-even in Net mode by the VAT amount.
+  const breakEven=netMonthlySaving>0 ? r.purchase/netMonthlySaving : Infinity;
   const tr=document.createElement("tr");
-  tr.innerHTML=`<td>${r.s.name}</td><td>${r.s.ram} GB</td><td>${r.s.aiMem} GB</td><td>${fmt(r.net)}</td><td>${fmt(r.monthly)}</td>
+  tr.innerHTML=`<td>${esc(r.s.name)}</td><td>${r.s.ram} GB</td><td>${r.s.aiMem} GB</td><td>${fmt(r.net)}</td><td>${fmt(r.monthly)}</td>
   <td>${isFinite(breakEven)?breakEven.toFixed(0)+" mo":"Never"}</td>
   <td><span class="badge ${fit[1]}">${fit[0]}</span></td>
   <td><span class="badge ${exp[1]}">${exp[0]}</span></td>`;
@@ -627,6 +664,10 @@ function update(){
  const maxY=Math.max(...series.flatMap(s=>s.points.map(p=>p.y)))*1.08 || 1;
  drawLines($("costChart"),series,maxY);
  drawBars($("ramChart"),need);
+ const cheapestCost=Math.min(cloud,...rows.map(r=>r.net));
+ const cheapestName=cloud===cheapestCost ? "Cloud" : rows.find(r=>r.net===cheapestCost)?.s.name || "configured workstation";
+ $("costChart").setAttribute("aria-label",`Cumulative cost comparison over ${yrs} years. Lowest modeled total is ${cheapestName} at approximately ${fmt(cheapestCost)}.`);
+ $("ramChart").setAttribute("aria-label",`AI memory fit chart. Target is approximately ${need.toFixed(0)} GB. ${scenarios.map(s=>`${s.name}: ${s.aiMem} GB`).join("; ")}.`);
 
  const viable=rows.filter(r=>r.s.aiMem>=need*1.05).sort((a,b)=>a.net-b.net);
  let msg="";
@@ -644,6 +685,29 @@ function update(){
   if(base.aiMem<need) msg+=` The base machine is fine as a client for cloud AI, but it is not a serious host for this target model.`;
  }
  $("decision").innerHTML=msg;
+ saveState();
+}
+
+function saveState(){
+ try{
+   const inputs=Object.fromEntries(persistedInputIds.map(id=>[id,$(id).value]));
+   localStorage.setItem(APP_STATE_KEY,JSON.stringify({inputs,scenarioIds:scenarios.map(s=>s.id)}));
+ }catch(_){ /* Private browsing/storage policies should never break the calculator. */ }
+}
+
+function loadState(){
+ try{
+   const raw=localStorage.getItem(APP_STATE_KEY);
+   if(!raw) return;
+   const state=JSON.parse(raw);
+   for(const [id,value] of Object.entries(state.inputs||{})){
+     if($(id)) $(id).value=value;
+   }
+   if(Array.isArray(state.scenarioIds) && state.scenarioIds.length===defaults.length){
+     const restored=state.scenarioIds.map(id=>workstationCatalog.find(x=>x.id===id));
+     if(restored.every(Boolean)) scenarios=restored.map(x=>({...x}));
+   }
+ }catch(_){ /* Ignore corrupt/blocked storage and fall back to documented defaults. */ }
 }
 
 ["priceBasis","vat","cloudSpend","includedTokens","overflowCost","years","elec","resale","privacy"].forEach(id=>$(id).addEventListener("input",update));
@@ -655,6 +719,9 @@ $("usagePreset").addEventListener("change",e=>{
  $(id).addEventListener("input",()=>{markUsageCustom();update();});
 });
 $("resetBtn").addEventListener("click",()=>{scenarios=defaults.map(x=>({...x}));renderScenarioInputs();update();});
+let resizeTimer;
+window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(update,100);});
+loadState();
 renderScenarioInputs();update();
 </script>
 </body>
