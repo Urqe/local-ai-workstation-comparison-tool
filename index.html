@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Local AI Workstation Decision Tool</title>
+<style>
+:root{
+  --bg:#0b0d10;--panel:#12161b;--panel2:#171c22;--text:#edf2f7;--muted:#99a3ad;
+  --line:#2a3139;--accent:#8ab4f8;--good:#72d49b;--warn:#f0c36a;--bad:#ef7a7a;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+header{padding:28px clamp(14px,2vw,28px) 12px;max-width:1600px;margin:auto}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:center;background:linear-gradient(180deg,#11161c 0%,#10141a 100%);border:1px solid var(--line);border-radius:18px;padding:20px 22px;position:relative;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.18)}
+.hero:before{content:"";position:absolute;inset:auto auto -35px -35px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(138,180,248,.12),rgba(138,180,248,0));pointer-events:none}
+.hero-copy{position:relative;z-index:1}
+.hero-kicker{display:inline-block;padding:5px 10px;border-radius:999px;border:1px solid #31404f;background:rgba(138,180,248,.08);color:#cfe0fb;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
+h1{margin:0 0 8px;font-size:clamp(27px,2.5vw,36px);letter-spacing:-.03em;line-height:1.05}
+.title-main{display:inline-block}
+.title-accent{display:inline-block;background:linear-gradient(90deg,#eef4ff 0%,#b6cdfc 46%,#d9c2ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 18px rgba(138,180,248,.08)}
+header p{margin:0;color:var(--muted);max-width:900px}
+.hero-note{margin-top:10px;font-size:12px;color:#aeb8c2}
+.hero-visual{position:relative;z-index:1;justify-self:end;max-width:280px;width:100%}
+.hero-visual svg{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 18px rgba(0,0,0,.22))}
+main{max-width:1600px;margin:auto;padding:18px clamp(14px,2vw,28px) 36px;display:grid;grid-template-columns:minmax(420px,470px) minmax(0,1fr);gap:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.16)}
+.controls{position:sticky;top:14px;align-self:start}
+h2{font-size:17px;margin:0 0 14px}
+h3{font-size:14px;margin:18px 0 8px;color:#d8e0e8}
+.field{margin:12px 0}
+label{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:#cbd3dc;margin-bottom:6px}
+input[type=number], select{width:100%;background:#0e1216;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+input[type=range]{width:100%}
+.small{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.metric{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px}
+.metric .k{font-size:12px;color:var(--muted);margin-bottom:6px}
+.metric .v{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.metric .s{font-size:12px;color:var(--muted);margin-top:4px}
+.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+canvas{width:100%;height:260px;background:#0e1216;border-radius:12px;border:1px solid var(--line)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:#cbd3dc;font-weight:600}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}
+.badge.good{background:rgba(114,212,155,.12)}
+.badge.warn{background:rgba(240,195,106,.12)}
+.badge.bad{background:rgba(239,122,122,.12)}
+.note{padding:12px 14px;border-left:3px solid var(--accent);background:#0e1216;border-radius:8px;color:#cfd7df;font-size:13px;line-height:1.45}
+button{background:#1a2430;border:1px solid #324154;color:var(--text);border-radius:10px;padding:8px 10px;cursor:pointer}
+button:hover{background:#223041}
+.scenario-header{display:grid;grid-template-columns:1fr repeat(4,minmax(64px,.65fr));gap:8px;align-items:end;margin-bottom:8px;color:#cbd3dc}
+.scenario-header b{font-size:12px}
+.scenario-card{background:#0e1216;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.scenario-picker{margin-bottom:9px}
+.scenario-picker label{margin-bottom:5px}
+.scenario-picker select{font-weight:600}
+.scenario-detail{font-size:11px;color:var(--muted);margin:-2px 0 9px;line-height:1.35}
+.scenario-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.scenario-cell{min-width:0;background:#12171d;border:1px solid #252d35;border-radius:8px;padding:7px}
+.scenario-cell label{display:block;font-size:9px;color:var(--muted);margin:0 0 3px}
+.scenario-value{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scenario-row input{min-width:0}
+footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:var(--muted);font-size:12px}
+@media(max-width:1180px){
+  main{grid-template-columns:minmax(360px,420px) minmax(0,1fr)}
+}
+@media(max-width:980px){
+  .hero{grid-template-columns:1fr}
+  .hero-visual{justify-self:center;max-width:240px}
+  main{grid-template-columns:1fr}
+  .controls{position:static}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .two{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  body{font-size:15px}
+  header{padding-top:18px}
+  .hero{padding:16px}
+  .hero-kicker{font-size:10px}
+  h1{font-size:clamp(24px,8vw,30px)}
+  .hero-note{font-size:11px}
+  main{padding-top:10px;gap:14px}
+  .card{padding:14px;border-radius:14px}
+  .grid{grid-template-columns:1fr}
+  .metric .v{font-size:20px}
+  .scenario-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  canvas{height:220px}
+  table{font-size:12px}
+  th,td{padding:8px 6px}
+}
+@media(max-width:390px){
+  .scenario-metrics{grid-template-columns:1fr 1fr}
+  input[type=number],select{font-size:16px}
+  .scenario-card{padding:9px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="hero">
+    <div class="hero-copy">
+      <div class="hero-kicker">cat-assisted planning • local AI economics</div>
+      <h1><span class="title-main">Local AI</span> <span class="title-accent">Workstation Decision Tool</span></h1>
+      <p>Compare local hardware against cloud AI. Adjust cost, RAM, model size, usage, electricity and ownership period. The model deliberately separates “fits in memory” from “pleasant to use.”</p>
+      <div class="hero-note">Now with subtle ragdoll supervision, because no serious infrastructure decision should escape feline review.</div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <svg viewBox="0 0 360 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <defs>
+          <linearGradient id="screenGlow" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#162233"/>
+            <stop offset="100%" stop-color="#25364e"/>
+          </linearGradient>
+          <linearGradient id="chipGlow" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#8ab4f8"/>
+            <stop offset="100%" stop-color="#b89cff"/>
+          </linearGradient>
+        </defs>
+
+        <rect x="75" y="134" width="128" height="20" rx="8" fill="#273242"/>
+        <rect x="82" y="78" width="114" height="62" rx="10" fill="url(#screenGlow)" stroke="#42526a"/>
+        <rect x="95" y="92" width="87" height="6" rx="3" fill="#5278b8" opacity="0.9"/>
+        <rect x="95" y="104" width="63" height="6" rx="3" fill="#6da48e" opacity="0.75"/>
+        <rect x="95" y="116" width="74" height="6" rx="3" fill="#8d7fe6" opacity="0.7"/>
+
+        <!-- Left ragdoll -->
+        <ellipse cx="91" cy="126" rx="34" ry="29" fill="#f2eadf"/>
+        <ellipse cx="91" cy="89" rx="27" ry="24" fill="#f6efe6"/>
+        <polygon points="74,72 83,53 95,71" fill="#6e5747"/>
+        <polygon points="107,71 119,53 122,74" fill="#6e5747"/>
+        <ellipse cx="83" cy="90" rx="6.5" ry="8.5" fill="#6e5747"/>
+        <ellipse cx="99" cy="90" rx="6.5" ry="8.5" fill="#6e5747"/>
+        <circle cx="86" cy="91" r="1.4" fill="#1a1d23"/>
+        <circle cx="102" cy="91" r="1.4" fill="#1a1d23"/>
+        <path d="M89 99 Q92 102 95 99" stroke="#7b6251" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M70 117 Q53 126 56 143" stroke="#a88368" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <ellipse cx="114" cy="117" rx="9" ry="7" fill="#f2eadf"/>
+        <ellipse cx="121" cy="124" rx="8" ry="6" fill="#f2eadf"/>
+        <path d="M117 119 Q131 121 142 122" stroke="#dbcbb8" stroke-width="7" fill="none" stroke-linecap="round"/>
+
+        <!-- Right ragdoll -->
+        <ellipse cx="255" cy="138" rx="42" ry="33" fill="#ede3d6"/>
+        <ellipse cx="253" cy="94" rx="31" ry="27" fill="#f6efe7"/>
+        <polygon points="233,78 244,56 253,80" fill="#6b5646"/>
+        <polygon points="261,78 277,58 279,82" fill="#6b5646"/>
+        <ellipse cx="242" cy="97" rx="7" ry="9" fill="#6b5646"/>
+        <ellipse cx="260" cy="97" rx="7" ry="9" fill="#6b5646"/>
+        <circle cx="245" cy="98" r="1.5" fill="#1a1d23"/>
+        <circle cx="263" cy="98" r="1.5" fill="#1a1d23"/>
+        <path d="M250 107 Q253 110 256 107" stroke="#7b6251" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M288 129 Q310 133 307 152" stroke="#9f7d62" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <ellipse cx="220" cy="136" rx="10" ry="8" fill="#ede3d6"/>
+
+        <!-- AI chip -->
+        <rect x="272" y="126" width="56" height="56" rx="11" fill="#1c2530" stroke="#4e617a"/>
+        <rect x="286" y="140" width="28" height="28" rx="6" fill="url(#chipGlow)" opacity="0.95"/>
+        <text x="300" y="158" text-anchor="middle" font-size="12" font-family="system-ui, sans-serif" fill="#0d1116" font-weight="700">AI</text>
+        <g stroke="#556a86" stroke-linecap="round">
+          <line x1="281" y1="121" x2="281" y2="128"/><line x1="293" y1="121" x2="293" y2="128"/><line x1="305" y1="121" x2="305" y2="128"/><line x1="317" y1="121" x2="317" y2="128"/>
+          <line x1="281" y1="180" x2="281" y2="187"/><line x1="293" y1="180" x2="293" y2="187"/><line x1="305" y1="180" x2="305" y2="187"/><line x1="317" y1="180" x2="317" y2="187"/>
+          <line x1="267" y1="135" x2="274" y2="135"/><line x1="267" y1="147" x2="274" y2="147"/><line x1="267" y1="159" x2="274" y2="159"/><line x1="267" y1="171" x2="274" y2="171"/>
+          <line x1="326" y1="135" x2="333" y2="135"/><line x1="326" y1="147" x2="333" y2="147"/><line x1="326" y1="159" x2="333" y2="159"/><line x1="326" y1="171" x2="333" y2="171"/>
+        </g>
+
+        <!-- tiny sparkles -->
+        <circle cx="212" cy="54" r="2" fill="#8ab4f8" opacity=".85"/>
+        <circle cx="320" cy="93" r="2" fill="#c0a9ff" opacity=".85"/>
+        <circle cx="145" cy="52" r="1.8" fill="#8ab4f8" opacity=".75"/>
+        <path d="M206 59 l4 0 M208 57 l0 4" stroke="#8ab4f8" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M329 87 l4 0 M331 85 l0 4" stroke="#c0a9ff" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="card controls">
+<h2>Assumptions</h2>
+
+<h3>Price basis</h3>
+<div class="field">
+<label><span>Calculation basis</span><strong id="priceBasisOut">Gross (VAT included)</strong></label>
+<select id="priceBasis">
+<option value="gross" selected>Gross — personal use / VAT included</option>
+<option value="net">Net — business use / VAT excluded</option>
+</select>
+</div>
+
+<div class="field">
+<label><span>VAT rate</span><strong id="vatOut">25.5%</strong></label>
+<input id="vat" type="range" min="0" max="30" step="0.1" value="25.5">
+<div class="small">Entered hardware and cloud prices are treated as VAT-included consumer prices. Net mode removes this VAT from both.</div>
+</div>
+
+<div class="field">
+<label><span>Cloud subscription / month (gross)</span><strong id="cloudSpendOut">€80</strong></label>
+<input id="cloudSpend" type="range" min="0" max="500" step="5" value="80">
+</div>
+
+<h3>Workload preset</h3>
+<div class="field">
+<label><span>Usage profile</span><strong id="usagePresetOut">Casual coding</strong></label>
+<select id="usagePreset">
+<option value="starter">Starter / occasional use</option>
+<option value="casual" selected>Casual coding</option>
+<option value="professional">Professional daily coding</option>
+<option value="solo">Solo AI product / consultancy</option>
+<option value="sprint">Product build sprint</option>
+<option value="allDay">Professional coding all day</option>
+<option value="autonomous">Heavy autonomous agent workload</option>
+<option value="custom">Custom</option>
+</select>
+<div id="usagePresetDesc" class="small" style="margin-top:6px"></div>
+</div>
+
+<div class="field">
+<label><span>Active days / week</span><strong id="daysWeekOut">4 days</strong></label>
+<input id="daysWeek" type="range" min="1" max="7" step="0.5" value="4">
+</div>
+
+<h3>Cloud usage estimate</h3>
+<div class="field">
+<label><span>Cloud AI use</span><strong id="cloudHoursOut">4.0 h/day</strong></label>
+<input id="cloudHours" type="range" min="0.25" max="24" step="0.25" value="4">
+</div>
+
+<div class="field">
+<label><span>Agentic tokens / hour</span><strong id="tokensHourOut">120k</strong></label>
+<input id="tokensHour" type="range" min="10000" max="500000" step="10000" value="120000">
+<div class="small">Planning estimate for Claude Code-style work: prompt/context reads, tool loops, generated code and reasoning all count toward usage.</div>
+</div>
+
+<div class="field">
+<label><span>Included monthly token-equivalent</span><strong id="includedTokensOut">25M</strong></label>
+<input id="includedTokens" type="range" min="1000000" max="100000000" step="1000000" value="25000000">
+<div class="small">Anthropic plans use rolling usage limits, not a literal monthly token bucket. This converts them into an adjustable monthly equivalent for comparison.</div>
+</div>
+
+<div class="field">
+<label><span>Paid overflow cost</span><strong id="overflowCostOut">€5.00/M</strong></label>
+<input id="overflowCost" type="range" min="0.5" max="30" step="0.5" value="5">
+<div class="small">Blended API-equivalent €/M token estimate after caching/input/output mix. Adjust this if your workload is Opus-heavy or unusually cache-efficient.</div>
+</div>
+
+<div class="field">
+<label><span>Ownership period</span><strong id="yearsOut">3 years</strong></label>
+<input id="years" type="range" min="1" max="6" step="0.5" value="3">
+</div>
+
+<div class="field">
+<label><span>Electricity price</span><strong id="elecOut">€0.20/kWh</strong></label>
+<input id="elec" type="range" min="0.05" max="0.60" step="0.01" value="0.20">
+</div>
+
+<div class="field">
+<label><span>Local AI active compute</span><strong id="hoursOut">4.0 h/day</strong></label>
+<input id="hours" type="range" min="0.25" max="24" step="0.25" value="4">
+</div>
+
+<div class="field">
+<label><span>Resale value after period</span><strong id="resaleOut">35%</strong></label>
+<input id="resale" type="range" min="0" max="70" step="5" value="35">
+</div>
+
+<div class="field">
+<label><span>Value of privacy/offline access</span><strong id="privacyOut">€20/mo</strong></label>
+<input id="privacy" type="range" min="0" max="150" step="5" value="20">
+<div class="small">Subjective benefit. Think: privacy, offline access, avoiding API limits, experimentation.</div>
+</div>
+
+<h3>Model target</h3>
+<div class="small" style="margin:-4px 0 8px">Workload presets also choose a realistic model size, quantization and context/headroom target. Adjusting any of them switches the workload to Custom.</div>
+<div class="field">
+<label><span>Parameters</span><strong id="paramsOut">27B</strong></label>
+<input id="params" type="range" min="7" max="120" step="1" value="27">
+</div>
+<div class="field">
+<label><span>Quantization</span></label>
+<select id="quant">
+<option value="0.55">Q4-ish</option>
+<option value="0.68" selected>Q5-ish</option>
+<option value="0.82">Q6-ish</option>
+<option value="1.05">Q8-ish</option>
+<option value="2.0">FP16/BF16</option>
+</select>
+</div>
+<div class="field">
+<label><span>Context overhead</span><strong id="overheadOut">8 GB</strong></label>
+<input id="overhead" type="range" min="2" max="32" step="1" value="8">
+<div class="small">KV cache + OS/apps + runtime headroom. Large context windows can make this brutally important.</div>
+</div>
+
+<h3>Scenario presets</h3>
+<div id="scenarioInputs"></div>
+<div class="small" style="margin:8px 0 10px">
+Apple systems use current Finnish Apple Store gross pricing/configuration options where available. M6 Mac mini supports 16/24/32 GB; M5 Pro mini extends to 48/64 GB on the higher chip. Mac Studio currently ranges from 36 GB M5 Max to 256 GB M5 Ultra; Apple lists 512 GB M5 Ultra as coming later in October. Windows/Linux systems are representative Finnish-market estimates. Mac AI memory = unified memory; NVIDIA AI memory = GPU VRAM. *Power and AI speed are planning estimates for sustained local inference, not vendor specifications or benchmark results.
+</div>
+<button id="resetBtn">Reset workstation presets</button>
+</section>
+
+<section>
+<div class="grid" id="metrics"></div>
+
+<div class="two">
+<div class="card">
+<h2>Cumulative cost over ownership period</h2>
+<canvas id="costChart" width="700" height="320"></canvas>
+</div>
+<div class="card">
+<h2>AI memory fit vs target model</h2>
+<canvas id="ramChart" width="700" height="320"></canvas>
+</div>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h2>Scenario comparison</h2><div class="small" style="margin:-8px 0 10px">MacBook Pro prices are stored as Finnish gross consumer prices; the selected VAT basis is applied automatically.</div>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Scenario</th><th>RAM</th><th>AI memory</th><th>Net ownership cost</th><th>Monthly equiv.</th><th>Break-even</th><th>Model fit</th><th>Use experience</th>
+</tr></thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+</div>
+
+<div class="card" style="margin-top:16px">
+<h2>Decision readout</h2>
+<div id="decision" class="note"></div>
+</div>
+</section>
+</main>
+
+<footer>
+This is a planning model, not a benchmark database. Apple source prices use current Finnish Apple Store gross pricing; generic Windows/Linux prices are representative estimates; Net mode removes the selected VAT rate. AI power and speed are planning estimates, not Apple specifications. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
+</footer>
+
+<script>
+const workstationCatalog = [
+  {group:"MacBook Pro",id:"mbp-m5-14-24",name:'MacBook Pro 14" M5 — 24 GB / 1 TB',price:2519,ram:24,aiMem:24,watts:30,speed:38,chip:"M5 10C CPU / 10C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5p-14-48",name:'MacBook Pro 14" M5 Pro — 48 GB / 1 TB',price:3299,ram:48,aiMem:48,watts:60,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5p-14-64",name:'MacBook Pro 14" M5 Pro — 64 GB / 1 TB',price:3739,ram:64,aiMem:64,watts:60,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5m-14-128",name:'MacBook Pro 14" M5 Max — 128 GB / 2 TB',price:7809,ram:128,aiMem:128,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"2 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5m-16-128",name:'MacBook Pro 16" M5 Max — 128 GB / 2 TB',price:8049,ram:128,aiMem:128,watts:96,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"2 TB",priceType:"Apple Finland"},
+
+  {group:"Mac mini",id:"mini-m6-16",name:"Mac mini M6 — 16 GB / 256 GB",price:1099,ram:16,aiMem:16,watts:26,speed:44,chip:"M6 12C CPU / 12C GPU",storage:"256 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m6-24",name:"Mac mini M6 — 24 GB / 512 GB",price:1539,ram:24,aiMem:24,watts:28,speed:44,chip:"M6 12C CPU / 12C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m6-32",name:"Mac mini M6 — 32 GB / 512 GB",price:1759,ram:32,aiMem:32,watts:29,speed:44,chip:"M6 12C CPU / 12C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-24",name:"Mac mini M5 Pro — 24 GB / 512 GB",price:2049,ram:24,aiMem:24,watts:48,speed:68,chip:"M5 Pro 15C CPU / 16C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-32",name:"Mac mini M5 Pro — 32 GB / 512 GB",price:2269,ram:32,aiMem:32,watts:49,speed:68,chip:"M5 Pro 15C CPU / 16C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-48",name:"Mac mini M5 Pro 18C/20C — 48 GB / 1 TB",price:3259,ram:48,aiMem:48,watts:58,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-64",name:"Mac mini M5 Pro 18C/20C — 64 GB / 1 TB",price:3699,ram:64,aiMem:64,watts:58,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+
+  {group:"Mac Studio",id:"studio-m5max-36",name:"Mac Studio M5 Max — 36 GB / 512 GB",price:3099,ram:36,aiMem:36,watts:78,speed:92,chip:"M5 Max 18C CPU / 32C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5max-48",name:"Mac Studio M5 Max — 48 GB / 1 TB",price:4089,ram:48,aiMem:48,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5max-64",name:"Mac Studio M5 Max — 64 GB / 1 TB",price:4529,ram:64,aiMem:64,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5max-128",name:"Mac Studio M5 Max — 128 GB / 1 TB",price:6289,ram:128,aiMem:128,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5ultra-96",name:"Mac Studio M5 Ultra 30C/64C — 96 GB / 1 TB",price:6799,ram:96,aiMem:96,watts:140,speed:150,chip:"M5 Ultra 30C CPU / 64C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5ultra-256",name:"Mac Studio M5 Ultra 36C/80C — 256 GB / 1 TB",price:11199,ram:256,aiMem:256,watts:155,speed:165,chip:"M5 Ultra 36C CPU / 80C GPU",storage:"1 TB",priceType:"Apple config price estimate"},
+
+  {group:"Windows laptop",id:"win-typical",name:"Typical Windows laptop — integrated GPU",price:1200,ram:32,aiMem:8,watts:35,speed:22,chip:"Modern Core Ultra / Ryzen AI, integrated GPU",storage:"1 TB",priceType:"Estimated Finland"},
+  {group:"Windows laptop",id:"win-gaming-mid",name:"Average gaming laptop — RTX 5070 8 GB",price:1900,ram:32,aiMem:8,watts:150,speed:72,chip:"Modern Ryzen/Core + RTX 5070 Laptop",storage:"1 TB",priceType:"Estimated Finland"},
+  {group:"Windows laptop",id:"win-gaming-high",name:"Powerful gaming laptop — RTX 5090 24 GB",price:4300,ram:64,aiMem:24,watts:200,speed:150,chip:"High-end Ryzen/Core + RTX 5090 Laptop",storage:"2 TB",priceType:"Estimated Finland"},
+
+  {group:"Windows desktop",id:"win-desktop-mid",name:"Average gaming desktop — RTX 5070 Ti 16 GB",price:2200,ram:32,aiMem:16,watts:420,speed:125,chip:"Modern Ryzen/Core + RTX 5070 Ti",storage:"2 TB",priceType:"Estimated Finland"},
+  {group:"Windows desktop",id:"win-desktop-high",name:"Powerful gaming desktop — RTX 5090 32 GB",price:5200,ram:64,aiMem:32,watts:700,speed:230,chip:"High-end Ryzen/Core + RTX 5090",storage:"2 TB",priceType:"Estimated Finland"},
+
+  {group:"Linux AI server",id:"linux-ai-dual5090",name:"Dedicated Linux AI server — dual RTX 5090",price:9500,ram:128,aiMem:64,watts:1200,speed:390,chip:"High-core-count CPU + 2× RTX 5090 32 GB",storage:"4 TB NVMe",priceType:"Estimated Finland"}
+];
+
+const catalogGroups = [...new Set(workstationCatalog.map(x=>x.group))];
+const defaultIds = ["mbp-m5p-14-64","mini-m5p-64","studio-m5max-128","win-desktop-high"];
+const defaults = defaultIds.map(id => ({...workstationCatalog.find(x=>x.id===id)}));
+let scenarios = defaults.map(x=>({...x}));
+
+const $ = id => document.getElementById(id);
+const fmt = n => new Intl.NumberFormat('en-FI',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function priceFactor(){
+  return $("priceBasis").value==="net" ? 1/(1+(+$("vat").value/100)) : 1;
+}
+function effectivePrice(gross){ return gross*priceFactor(); }
+function basisLabel(){ return $("priceBasis").value==="net" ? "Net" : "Gross"; }
+
+const workloadPresets = {
+ starter:{
+   label:"Starter / occasional use",
+   hours:1, days:2, tokensHour:45000,
+   params:9, quant:"0.68", overhead:4,
+   desc:"Learning, occasional scripting, small edits and short coding sessions. Target: ~9B Q5 with modest context."
+ },
+ casual:{
+   label:"Casual coding",
+   hours:4, days:4, tokensHour:80000,
+   params:14, quant:"0.68", overhead:6,
+   desc:"Feature work, debugging, refactoring and some test generation. Target: ~14B Q5 with moderate context."
+ },
+ professional:{
+   label:"Professional daily coding",
+   hours:8, days:5, tokensHour:120000,
+   params:27, quant:"0.68", overhead:10,
+   desc:"AI throughout the workday: implementation, debugging, tests, reviews and tool use. Target: ~27B Q5 with useful context headroom."
+ },
+ solo:{
+   label:"Solo AI product / consultancy",
+   hours:9, days:5.5, tokensHour:160000,
+   params:32, quant:"0.68", overhead:14,
+   desc:"Vibe-coded products plus client work, experimentation and repeated agent loops. Target: ~32B Q5 with substantial context."
+ },
+ sprint:{
+   label:"Product build sprint",
+   hours:13, days:6.5, tokensHour:210000,
+   params:32, quant:"0.68", overhead:18,
+   desc:"Intense launch/build periods: large repo reads, test/fix loops, refactors and background agents. Target: ~32B Q5 with heavy context."
+ },
+ allDay:{
+   label:"Professional coding all day",
+   hours:13, days:5.5, tokensHour:180000,
+   params:32, quant:"0.68", overhead:16,
+   desc:"Long, complex agentic sessions with large repositories and repeated test/fix loops. Target: ~32B Q5."
+ },
+ autonomous:{
+   label:"Heavy autonomous agent workload",
+   hours:22, days:7, tokensHour:240000,
+   params:70, quant:"0.55", overhead:24,
+   desc:"Near-continuous agents generating tests, reviewing code, fixing and iterating. Target: ~70B Q4 with generous context overhead."
+ }
+};
+
+function applyUsagePreset(key){
+ const p=workloadPresets[key];
+ if(!p) return;
+ $("hours").value=p.hours;
+ $("cloudHours").value=p.hours;
+ $("daysWeek").value=p.days;
+ $("tokensHour").value=p.tokensHour;
+ $("params").value=p.params;
+ $("quant").value=p.quant;
+ $("overhead").value=p.overhead;
+ update();
+}
+
+function markUsageCustom(){
+ if($("usagePreset").value!=="custom") $("usagePreset").value="custom";
+}
+
+function modelMemoryGB(){
+ const p=+$("params").value, q=+$("quant").value, overhead=+$("overhead").value;
+ return p*q + overhead;
+}
+function fitLabel(ram, need){
+ const ratio=ram/need;
+ if(ratio>=1.35) return ["Comfortable","good"];
+ if(ratio>=1.05) return ["Fits","warn"];
+ if(ratio>=0.9) return ["Marginal","warn"];
+ return ["No","bad"];
+}
+function expLabel(s, ram, need){
+ const ratio=ram/need;
+ let score=s*(ratio>=1.15?1:ratio>=1?0.75:ratio>=0.9?0.45:0.15);
+ if(score>=75) return ["Pleasant","good"];
+ if(score>=45) return ["Usable","warn"];
+ return ["Frustrating","bad"];
+}
+function lifecycle(s){
+ const yrs=+$("years").value, h=+$("hours").value, ep=+$("elec").value, resale=+$("resale").value/100;
+ const days=+$("daysWeek").value;
+ const activeDaysPerYear=365.25*(days/7);
+ const energy=(s.watts/1000)*h*activeDaysPerYear*yrs*ep;
+ const purchase=effectivePrice(s.price);
+ const net=purchase*(1-resale)+energy;
+ return {energy,net,monthly:net/(yrs*12),purchase};
+}
+function cloudUsageMonthly(){
+ const hours=+$("cloudHours").value;
+ const tokensHour=+$("tokensHour").value;
+ const included=+$("includedTokens").value;
+ const overflowRate=+$("overflowCost").value;
+ const activeDaysPerMonth=(365.25/12)*(+$("daysWeek").value/7);
+ const tokens=hours*activeDaysPerMonth*tokensHour;
+ const overflow=Math.max(0,tokens-included);
+ const overflowGross=(overflow/1e6)*overflowRate;
+ const subscription=effectivePrice(+$("cloudSpend").value);
+ const overflowEffective=effectivePrice(overflowGross);
+ return {hours,tokens,included,overflow,overflowGross,overflowEffective,subscription,total:subscription+overflowEffective};
+}
+function cloudTotal(months){ return cloudUsageMonthly().total*months; }
+
+function renderScenarioInputs(){
+ const c=$("scenarioInputs"); c.innerHTML="";
+ scenarios.forEach((s,i)=>{
+  const card=document.createElement("div"); card.className="scenario-card";
+  const options=catalogGroups.map(group=>{
+    const inner=workstationCatalog.filter(m=>m.group===group)
+      .map(m=>`<option value="${m.id}" ${m.id===s.id?"selected":""}>${m.name}</option>`).join("");
+    return `<optgroup label="${group}">${inner}</optgroup>`;
+  }).join("");
+  card.innerHTML=`
+   <div class="scenario-picker">
+     <label><span>Scenario ${i+1}</span></label>
+     <select data-i="${i}" aria-label="Select workstation configuration">${options}</select>
+   </div>
+   <div class="scenario-detail">${s.chip} · ${s.storage} · ${s.priceType}</div>
+   <div class="scenario-metrics">
+     <div class="scenario-cell"><label>Gross price</label><div class="scenario-value">${fmt(s.price)}</div></div>
+     <div class="scenario-cell"><label>System RAM</label><div class="scenario-value">${s.ram} GB</div></div>
+     <div class="scenario-cell"><label>AI memory</label><div class="scenario-value">${s.aiMem} GB</div></div>
+     <div class="scenario-cell"><label>AI watts*</label><div class="scenario-value">~${s.watts} W</div></div>
+     <div class="scenario-cell"><label>AI speed*</label><div class="scenario-value">${s.speed}</div></div>
+   </div>`;
+  c.appendChild(card);
+ });
+ c.querySelectorAll("select").forEach(sel=>sel.addEventListener("change",e=>{
+  const i=+e.target.dataset.i;
+  const chosen=workstationCatalog.find(x=>x.id===e.target.value);
+  scenarios[i]={...chosen};
+  renderScenarioInputs();
+  update();
+ }));
+}
+
+function drawLines(canvas, series, maxY){
+ const ctx=canvas.getContext("2d"), w=canvas.width,h=canvas.height;
+ ctx.clearRect(0,0,w,h); ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
+ const pad={l:58,r:20,t:20,b:38};
+ ctx.strokeStyle="#2a3139";ctx.lineWidth=1;ctx.font="12px system-ui";ctx.fillStyle="#99a3ad";
+ for(let j=0;j<=4;j++){
+  const y=pad.t+(h-pad.t-pad.b)*j/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
+  const val=maxY*(1-j/4);ctx.fillText(fmt(val),5,y+4);
+ }
+ const months=(+$("years").value)*12;
+ [0,months/2,months].forEach((m,idx)=>{
+   const x=pad.l+(w-pad.l-pad.r)*(idx/2); ctx.fillText(Math.round(m)+"m",x-10,h-12);
+ });
+ const palette=["#8ab4f8","#72d49b","#f0c36a","#d09cff","#ef7a7a"];
+ series.forEach((ser,si)=>{
+  ctx.strokeStyle=palette[si%palette.length];ctx.lineWidth=2.5;ctx.beginPath();
+  ser.points.forEach((p,idx)=>{
+   const x=pad.l+(w-pad.l-pad.r)*(p.x/months);
+   const y=pad.t+(h-pad.t-pad.b)*(1-p.y/maxY);
+   idx?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });ctx.stroke();
+  ctx.fillStyle=palette[si%palette.length];ctx.fillRect(w-195,pad.t+si*22,10,10);ctx.fillStyle="#cfd7df";ctx.fillText(ser.name,w-178,pad.t+9+si*22);
+ });
+}
+
+function drawBars(canvas, need){
+ const ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
+ const pad={l:110,r:30,t:30,b:30}, max=Math.max(need*1.4,...scenarios.map(s=>s.aiMem))*1.05;
+ ctx.font="12px system-ui";
+ scenarios.forEach((s,i)=>{
+   const y=pad.t+i*58;ctx.fillStyle="#cfd7df";ctx.fillText(s.name.slice(0,16),8,y+18);
+   ctx.fillStyle="#26303a";ctx.fillRect(pad.l,y,(w-pad.l-pad.r),24);
+   const bw=(w-pad.l-pad.r)*(s.aiMem/max);
+   ctx.fillStyle=s.aiMem>=need*1.05?"#72d49b":s.aiMem>=need*.9?"#f0c36a":"#ef7a7a";
+   ctx.fillRect(pad.l,y,bw,24);ctx.fillStyle="#edf2f7";ctx.fillText(s.aiMem+" GB",pad.l+6,y+17);
+ });
+ const x=pad.l+(w-pad.l-pad.r)*(need/max);
+ ctx.strokeStyle="#8ab4f8";ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x,pad.t-8);ctx.lineTo(x,h-pad.b);ctx.stroke();ctx.setLineDash([]);
+ ctx.fillStyle="#8ab4f8";ctx.fillText("Target ≈ "+need.toFixed(0)+" GB",Math.min(x+6,w-120),16);
+}
+
+function update(){
+ $("priceBasisOut").textContent=$("priceBasis").value==="net" ? "Net (VAT excluded)" : "Gross (VAT included)";
+ $("vatOut").textContent=(+$("vat").value).toFixed(1)+"%";
+ $("cloudSpendOut").textContent=fmt(+$("cloudSpend").value);
+ const presetKey=$("usagePreset").value;
+ $("usagePresetOut").textContent=presetKey==="custom" ? "Custom" : workloadPresets[presetKey].label;
+ $("usagePresetDesc").textContent=presetKey==="custom"
+   ? "Manual workload settings. Adjust local/cloud hours, days per week and token intensity independently."
+   : workloadPresets[presetKey].desc;
+ $("daysWeekOut").textContent=(+$("daysWeek").value).toFixed(+$("daysWeek").value%1?1:0)+" days";
+ $("cloudHoursOut").textContent=(+$("cloudHours").value).toFixed(1)+" h/day";
+ $("tokensHourOut").textContent=Math.round((+$("tokensHour").value)/1000)+"k";
+ $("includedTokensOut").textContent=((+$("includedTokens").value)/1e6).toFixed(0)+"M";
+ $("overflowCostOut").textContent="€"+(+$("overflowCost").value).toFixed(2)+"/M";
+ $("yearsOut").textContent=(+$("years").value)+" years";
+ $("elecOut").textContent="€"+(+$("elec").value).toFixed(2)+"/kWh";
+ $("hoursOut").textContent=(+$("hours").value).toFixed(1)+" h/day";
+ $("resaleOut").textContent=$("resale").value+"%";
+ $("privacyOut").textContent=fmt(+$("privacy").value)+"/mo";
+ $("paramsOut").textContent=$("params").value+"B";
+ $("overheadOut").textContent=$("overhead").value+" GB";
+
+ const yrs=+$("years").value, months=yrs*12, need=modelMemoryGB(), cu=cloudUsageMonthly(), cloud=cloudTotal(months), privacy=(+$("privacy").value)*months;
+ const rows=scenarios.map(s=>({s,...lifecycle(s)}));
+ const best=[...rows].sort((a,b)=>(a.net-cloud-privacy)-(b.net-cloud-privacy))[0];
+
+ $("metrics").innerHTML=`
+ <div class="metric"><div class="k">Target fast AI memory</div><div class="v">${need.toFixed(0)} GB</div><div class="s">${$("params").value}B with selected quant + overhead</div></div>
+ <div class="metric"><div class="k">Cloud cost over period (${basisLabel()})</div><div class="v">${fmt(cloud)}</div><div class="s">${fmt(cu.total)}/mo incl. estimated overflow</div></div>
+ <div class="metric"><div class="k">Estimated cloud usage</div><div class="v">${(cu.tokens/1e6).toFixed(1)}M</div><div class="s">tokens/month · ${(cu.overflow/1e6).toFixed(1)}M overflow · ${+$("daysWeek").value} d/wk</div></div>
+ <div class="metric"><div class="k">Privacy/offline value</div><div class="v">${fmt(privacy)}</div><div class="s">Subjective benefit over ${yrs} years</div></div>
+ <div class="metric"><div class="k">Cheapest adjusted option</div><div class="v">${best.s.name}</div><div class="s">After VAT basis, resale, power and your privacy value</div></div>`;
+
+ const tb=$("tableBody");tb.innerHTML="";
+ rows.forEach(r=>{
+  const fit=fitLabel(r.s.aiMem,need), exp=expLabel(r.s.speed,r.s.aiMem,need);
+  const netMonthlySaving=(cu.total + +$("privacy").value)-r.monthly;
+  const breakEven=netMonthlySaving>0 ? r.s.price/netMonthlySaving : Infinity;
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td>${r.s.name}</td><td>${r.s.ram} GB</td><td>${r.s.aiMem} GB</td><td>${fmt(r.net)}</td><td>${fmt(r.monthly)}</td>
+  <td>${isFinite(breakEven)?breakEven.toFixed(0)+" mo":"Never"}</td>
+  <td><span class="badge ${fit[1]}">${fit[0]}</span></td>
+  <td><span class="badge ${exp[1]}">${exp[0]}</span></td>`;
+  tb.appendChild(tr);
+ });
+
+ let series=[{name:"Cloud",points:[]}];
+ for(let m=0;m<=months;m++) series[0].points.push({x:m,y:cu.total*m});
+ rows.forEach(r=>{
+   const ser={name:r.s.name,points:[]};
+   for(let m=0;m<=months;m++){
+    const frac=m/months;
+    const purchase=effectivePrice(r.s.price);
+    const resaleAtEnd=purchase*(+$("resale").value/100)*frac;
+    const energy=r.energy*frac;
+    ser.points.push({x:m,y:purchase-resaleAtEnd+energy});
+   }
+   series.push(ser);
+ });
+ const maxY=Math.max(...series.flatMap(s=>s.points.map(p=>p.y)))*1.08 || 1;
+ drawLines($("costChart"),series,maxY);
+ drawBars($("ramChart"),need);
+
+ const viable=rows.filter(r=>r.s.aiMem>=need*1.05).sort((a,b)=>a.net-b.net);
+ let msg="";
+ if(!viable.length){
+  msg=`Your selected ${$("params").value}B target needs roughly <b>${need.toFixed(0)} GB</b> with the assumptions above. None of the configured machines has enough comfortable headroom. Buying any of them specifically for this model would be a compromise before you even start arguing about speed.`;
+ }else{
+  const v=viable[0], delta=v.net-cloud;
+  const cloudRate=cu.total, adjusted=cloud+privacy;
+  msg=`Using <b>${basisLabel().toLowerCase()} prices</b>, the cheapest machine that comfortably fits the target is <b>${v.s.name}</b>. Its estimated ownership cost is <b>${fmt(v.net)}</b> over ${yrs} years versus <b>${fmt(cloud)}</b> for cloud at roughly ${(cu.tokens/1e6).toFixed(1)}M tokens/month. `;
+  if(cu.overflow>0) msg+=`At the current assumptions, about <b>${(cu.overflow/1e6).toFixed(1)}M tokens/month</b> exceed the subscription-equivalent allowance, adding approximately <b>${fmt(cu.overflowEffective)}/month</b> in paid overflow. `;
+  else msg+=`The estimated workload remains inside the configured subscription-equivalent allowance, so no paid overflow is modeled. `;
+  if(v.net<=adjusted) msg+=`Once you assign ${fmt(+$("privacy").value)}/month of value to privacy/offline access, the local option becomes economically defensible under your assumptions.`;
+  else msg+=`Even after valuing privacy/offline access at ${fmt(+$("privacy").value)}/month, cloud remains cheaper by about <b>${fmt(v.net-adjusted)}</b>. In that case the workstation is primarily a capability/hobby purchase, not a cost-saving one.`;
+  const base=scenarios[0];
+  if(base.aiMem<need) msg+=` The base machine is fine as a client for cloud AI, but it is not a serious host for this target model.`;
+ }
+ $("decision").innerHTML=msg;
+}
+
+["priceBasis","vat","cloudSpend","includedTokens","overflowCost","years","elec","resale","privacy"].forEach(id=>$(id).addEventListener("input",update));
+$("usagePreset").addEventListener("change",e=>{
+ if(e.target.value!=="custom") applyUsagePreset(e.target.value);
+ else update();
+});
+["hours","cloudHours","daysWeek","tokensHour","params","quant","overhead"].forEach(id=>{
+ $(id).addEventListener("input",()=>{markUsageCustom();update();});
+});
+$("resetBtn").addEventListener("click",()=>{scenarios=defaults.map(x=>({...x}));renderScenarioInputs();update();});
+renderScenarioInputs();update();
+</script>
+</body>
+</html>
