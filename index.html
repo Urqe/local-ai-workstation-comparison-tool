@@ -267,8 +267,8 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </div>
 
 <div class="field">
-<label for="resale"><span>Resale value after period</span><strong id="resaleOut">35%</strong></label>
-<input id="resale" type="range" min="0" max="70" step="5" value="35">
+<label><span>Estimated resale after ownership period</span><strong id="resaleOut"></strong></label>
+<div class="small">Typical workstation depreciation curve: steep in year one, flattening later. Planning estimate, not a market quote.</div>
 </div>
 
 <div class="field">
@@ -393,6 +393,22 @@ const fmt = n => new Intl.NumberFormat('en-FI',{style:'currency',currency:'EUR',
 // Keeping one canonical gross value lets the same scenario switch cleanly between personal
 // (gross) and VAT-deductible business (net) economics without duplicating catalog data.
 const VAT_RATE=0.255;
+// Resale value follows a depreciation curve rather than one flat percentage:
+// hardware loses most value in the first year and flattens afterwards. Anchor
+// points are planning estimates typical of workstations (Apple Silicon holds
+// value relatively well; gaming PCs depreciate faster).
+const RESALE_ANCHORS=[[0.5,0.90],[1,0.80],[2,0.55],[3,0.40],[4,0.28],[5,0.20],[6,0.14]];
+function resaleFraction(years){
+ const pts=RESALE_ANCHORS;
+ if(years<=pts[0][0]) return pts[0][1];
+ for(let i=1;i<pts.length;i++){
+   if(years<=pts[i][0]){
+     const [x0,y0]=pts[i-1],[x1,y1]=pts[i];
+     return y0+(y1-y0)*((years-x0)/(x1-x0));
+   }
+ }
+ return pts[pts.length-1][1];
+}
 function priceFactor(){
   return $("priceBasis").value==="net" ? 1/(1+VAT_RATE) : 1;
 }
@@ -422,8 +438,8 @@ function esc(value){
 const APP_STATE_KEY="local-ai-workstation-tool:v2";
 // v1 keys (unversioned payload) are treated as incompatible and ignored; the documented
 // defaults are used instead of guessing at an older schema.
-const persistedInputIds=["priceBasis","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","resale","privacy","params","quant","overhead"];
-const advancedDefaults={elec:"0.20",hours:"4",resale:"35",privacy:"20"};
+const persistedInputIds=["priceBasis","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","privacy","params","quant","overhead"];
+const advancedDefaults={elec:"0.20",hours:"4",privacy:"20"};
 
 const workloadPresets = {
  starter:{
@@ -517,7 +533,7 @@ function lifecycle(s){
  // Energy deliberately covers AI-active compute only. Idle/sleep draw is excluded because
  // laptops, desktops and always-on servers have radically different idle behaviour. The
  // footer calls out this simplifying assumption so the local case is not mistaken for TCO.
- const yrs=+$("years").value, h=+$("hours").value, ep=+$("elec").value, resale=+$("resale").value/100;
+ const yrs=+$("years").value, h=+$("hours").value, ep=+$("elec").value, resale=resaleFraction(yrs);
  const days=+$("daysWeek").value;
  const activeDaysPerYear=365.25*(days/7);
  const energy=(s.watts/1000)*h*activeDaysPerYear*yrs*ep;
@@ -719,7 +735,7 @@ function update(){
  $("yearsOut").textContent=(+$("years").value)+" years";
  $("elecOut").textContent="€"+(+$("elec").value).toFixed(2)+"/kWh";
  $("hoursOut").textContent=(+$("hours").value).toFixed(1)+" h/day";
- $("resaleOut").textContent=$("resale").value+"%";
+ $("resaleOut").textContent=Math.round(resaleFraction(+$("years").value)*100)+"% after "+$("years").value+" years";
  $("privacyOut").textContent=fmt(+$("privacy").value)+"/mo";
  $("paramsOut").textContent=$("params").value+"B";
  $("overheadOut").textContent=$("overhead").value+" GB";
@@ -810,7 +826,7 @@ function loadState(){
  }catch(_){ /* Ignore corrupt/blocked storage and fall back to documented defaults. */ }
 }
 
-["priceBasis","cloudSpend","includedTokens","overflowCost","years","elec","resale","privacy"].forEach(id=>$(id).addEventListener("input",update));
+["priceBasis","cloudSpend","includedTokens","overflowCost","years","elec","privacy"].forEach(id=>$(id).addEventListener("input",update));
 $("usagePreset").addEventListener("change",e=>{
  if(e.target.value!=="custom") applyUsagePreset(e.target.value);
  else update();
@@ -837,7 +853,7 @@ function redrawCharts(){
  rows.forEach(r=>{
    const ser={name:r.s.name,points:[]};
    const purchase=effectivePrice(r.s.price);
-   const resaleCredit=purchase*(+$("resale").value/100);
+   const resaleCredit=purchase*resaleFraction(+$("years").value);
    for(let m=0;m<=months;m++){
     const resaleAtEnd=(m===months)?resaleCredit:0;
     const energy=r.energy*(m/months);
