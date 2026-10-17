@@ -610,27 +610,32 @@ function prepareCanvas(canvas){
 function drawCostWatermark(ctx,x,y,w,h){
  ctx.save();
  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
- const size=Math.min(w*.72,h*.92);
- ctx.translate(x+w*.12,y+h-size);
+ const size=Math.min(w*.62,h*.96);
+ ctx.translate(x+w*.10,y+h-size);
  ctx.scale(size/240,size/240);
- ctx.globalAlpha=0.065;
- // An intentionally exaggerated rising arrow is decorative, never a data series.
+ ctx.globalAlpha=0.075;
+ // Stonks-style decorative watermark: featureless stone-gray head, dark suit,
+ // light-blue tie and crossed forearms beneath an exaggerated rising arrow.
+ // Purely decorative; drawn beneath chart data and never a data series.
  ctx.fillStyle="#72d49b";
- ctx.fill(new Path2D("M18 160 L85 111 L126 131 L192 63 L172 43 L238 29 L227 96 L207 77 L130 159 L88 139 L31 181 Z"));
- // Faceted, blank-faced finance enthusiast in a suit: original vector artwork.
- ctx.fillStyle="#a9bfdc";
- ctx.fill(new Path2D("M24 240 L30 178 L70 155 L110 154 L152 182 L169 240 Z"));
+ ctx.fill(new Path2D("M10 170 L88 108 L124 130 L184 55 L160 30 L244 12 L228 96 L205 74 L128 168 L86 143 L24 196 Z"));
+ // Head: rounded trapezoid, wider at the jaw, no face features at all.
+ ctx.fillStyle="#b6bec9";
+ ctx.fill(new Path2D("M96 42 C96 20 144 20 144 42 C144 56 150 76 138 96 C132 106 108 106 102 96 C90 76 96 56 96 42 Z"));
+ // Shoulders/torso: oversized suit silhouette narrowing slightly to the base.
+ ctx.fillStyle="#2e3a4d";
+ ctx.fill(new Path2D("M58 240 L64 128 C72 104 168 104 176 128 L182 240 Z"));
+ // Shirt collar: two white wedges meeting at the tie knot.
  ctx.fillStyle="#edf2f7";
- ctx.fill(new Path2D("M66 153 L90 170 L113 154 L100 224 L81 224 Z"));
+ ctx.fill(new Path2D("M104 106 L120 124 L112 176 L98 130 Z"));
+ ctx.fill(new Path2D("M136 106 L120 124 L128 176 L142 130 Z"));
+ // Tie: light blue, from knot down over the crossed arms.
  ctx.fillStyle="#8ab4f8";
- ctx.fill(new Path2D("M86 172 L96 172 L101 184 L96 223 L87 223 L83 184 Z"));
- ctx.fillStyle="#c6d3e3";
- ctx.fill(new Path2D("M65 84 L82 67 L106 70 L122 91 L119 128 L105 151 L83 155 L65 135 L58 107 Z"));
- ctx.fillStyle="#8dabc9";
- ctx.fill(new Path2D("M106 70 L122 91 L119 128 L105 151 L96 132 L104 111 Z"));
- ctx.strokeStyle="#617e9e";ctx.lineWidth=3;
- ctx.stroke(new Path2D("M68 105 L80 102 M98 103 L110 107 M89 108 L85 121 L93 123 M81 135 L99 136"));
- ctx.stroke(new Path2D("M68 161 L52 186 L76 199 L68 214 L81 240 M112 161 L129 186 L109 201 L117 216 L105 240"));
+ ctx.fill(new Path2D("M112 122 L128 122 L124 168 L120 196 L116 168 Z"));
+ // Crossed forearms in suit-sleeve color, overlapping low on the torso.
+ ctx.fillStyle="#39485f";
+ ctx.fill(new Path2D("M66 178 C90 158 150 158 174 178 C150 190 90 190 66 178 Z"));
+ ctx.fill(new Path2D("M62 186 C92 172 148 172 178 186 C150 202 90 202 62 186 Z"));
  ctx.restore();
 }
 
