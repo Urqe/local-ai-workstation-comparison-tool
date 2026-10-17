@@ -4,7 +4,7 @@ A small, self-contained browser calculator for comparing the economics and pract
 
 Live site: https://urqe.github.io/local-ai-workstation-comparison-tool/
 
-The tool includes workstation presets for Apple Silicon, representative Windows gaming/workstation systems, and a Linux AI server; workload presets from occasional coding through heavy autonomous-agent usage; gross-vs-net VAT modeling; cloud subscription and overflow estimates; model-size/quantization/context memory estimates; resale value; electricity; and a qualitative usability score.
+The tool includes workstation presets for Apple Silicon, representative Windows gaming/workstation systems, and a Linux AI server; workload presets from occasional coding through heavy autonomous-agent usage; gross-vs-net VAT modeling; cloud subscription and overflow estimates; model-size/quantization/context memory estimates; an ownership-period-based resale depreciation curve; electricity; and a qualitative usability score.
 
 ## Run locally
 
