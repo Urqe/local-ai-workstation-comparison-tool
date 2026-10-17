@@ -194,11 +194,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </select>
 </div>
 
-<div class="field" id="vatField">
-<label for="vat"><span>VAT rate</span><strong id="vatOut">25.5%</strong></label>
-<input id="vat" type="range" min="0" max="30" step="0.1" value="25.5">
-<div class="small">Entered hardware and cloud prices are treated as VAT-included consumer prices. Net mode removes this VAT from both.</div>
-</div>
+<div class="small" style="margin:8px 0 0">Finnish general VAT is fixed at 25.5%: Net mode deducts it from hardware and subscription prices; Gross mode adds it to the net API overflow rate below.</div>
 
 <div class="field">
 <label for="cloudSpend"><span>Cloud subscription / month (gross)</span><strong id="cloudSpendOut">€80</strong></label>
@@ -349,7 +345,7 @@ Apple systems use current Finnish Apple Store gross pricing/configuration option
 </main>
 
 <footer>
-This is a planning model, not a benchmark database. Apple source prices use current Finnish Apple Store gross pricing; generic Windows/Linux prices are representative estimates. Hardware and cloud-subscription inputs are stored gross; Net mode removes the selected VAT. The paid-overflow €/M token input is deliberately treated as a net API-equivalent rate: Gross mode adds VAT, Net mode does not. Local electricity models AI-active compute only and excludes ordinary idle/sleep power, because idle behaviour varies too much by device and user; this slightly favours local hardware if a machine is left powered on for long periods. AI power and speed are planning estimates, not vendor specifications. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
+This is a planning model, not a benchmark database. Apple source prices use current Finnish Apple Store gross pricing; generic Windows/Linux prices are representative estimates. Hardware and cloud-subscription inputs are stored gross; Net mode removes the fixed Finnish general VAT of 25.5% (Gross mode adds it to the net API-equivalent overflow rate). The paid-overflow €/M token input is deliberately treated as a net API-equivalent rate: Gross mode adds VAT, Net mode does not. Local electricity models AI-active compute only and excludes ordinary idle/sleep power, because idle behaviour varies too much by device and user; this slightly favours local hardware if a machine is left powered on for long periods. AI power and speed are planning estimates, not vendor specifications. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
 </footer>
 
 <script>
@@ -396,12 +392,13 @@ const fmt = n => new Intl.NumberFormat('en-FI',{style:'currency',currency:'EUR',
 // Hardware and subscription catalog prices are stored as VAT-inclusive consumer prices.
 // Keeping one canonical gross value lets the same scenario switch cleanly between personal
 // (gross) and VAT-deductible business (net) economics without duplicating catalog data.
+const VAT_RATE=0.255;
 function priceFactor(){
-  return $("priceBasis").value==="net" ? 1/(1+(+$("vat").value/100)) : 1;
+  return $("priceBasis").value==="net" ? 1/(1+VAT_RATE) : 1;
 }
 function effectivePrice(gross){ return gross*priceFactor(); }
 function priceFromNet(net){
-  return $("priceBasis").value==="gross" ? net*(1+(+$("vat").value/100)) : net;
+  return $("priceBasis").value==="gross" ? net*(1+VAT_RATE) : net;
 }
 function basisLabel(){ return $("priceBasis").value==="net" ? "Net" : "Gross"; }
 
@@ -409,7 +406,6 @@ function basisLabel(){ return $("priceBasis").value==="net" ? "Net" : "Gross"; }
 // workload-driven sections stay collapsed unless the user goes Custom. Chips flag
 // collapsed sections whose values differ from the defaults/presets so nothing is lost.
 function refreshDisclosure(){
- $("vatField").hidden=$("priceBasis").value!=="net";
  const isCustom=$("usagePreset").value==="custom";
  $("cloudChip").hidden=!isCustom;
  $("modelChip").hidden=!isCustom;
@@ -426,7 +422,7 @@ function esc(value){
 const APP_STATE_KEY="local-ai-workstation-tool:v2";
 // v1 keys (unversioned payload) are treated as incompatible and ignored; the documented
 // defaults are used instead of guessing at an older schema.
-const persistedInputIds=["priceBasis","vat","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","resale","privacy","params","quant","overhead"];
+const persistedInputIds=["priceBasis","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","resale","privacy","params","quant","overhead"];
 const advancedDefaults={elec:"0.20",hours:"4",resale:"35",privacy:"20"};
 
 const workloadPresets = {
@@ -547,6 +543,18 @@ function cloudUsageMonthly(){
 }
 function cloudTotal(months){ return cloudUsageMonthly().total*months; }
 
+function priceCellLabel(){
+ return $("priceBasis").value==="net" ? "Net price" : "Gross price";
+}
+// Secondary line shows the other basis plus the VAT component, so the
+// consumer-vs-deducting-business delta is visible without toggling modes.
+function priceCellNote(gross){
+ const vat=gross-gross/(1+VAT_RATE);
+ return $("priceBasis").value==="net"
+   ? "incl. VAT "+fmt(gross)+" \u00b7 VAT "+fmt(vat)
+   : "net "+fmt(gross/(1+VAT_RATE))+" \u00b7 VAT "+fmt(vat);
+}
+
 function renderScenarioInputs(){
  const c=$("scenarioInputs"); c.innerHTML="";
  scenarios.forEach((s,i)=>{
@@ -563,7 +571,7 @@ function renderScenarioInputs(){
    </div>
    <div class="scenario-detail">${esc(s.chip)} · ${esc(s.storage)} · ${esc(s.priceType)}</div>
    <div class="scenario-metrics">
-     <div class="scenario-cell"><div class="scenario-key">Gross price</div><div class="scenario-value">${fmt(s.price)}</div></div>
+     <div class="scenario-cell"><div class="scenario-key">${priceCellLabel()}</div><div class="scenario-value">${fmt(effectivePrice(s.price))}</div><div class="scenario-key" style="margin-top:3px">${priceCellNote(s.price)}</div></div>
      <div class="scenario-cell"><div class="scenario-key">System RAM</div><div class="scenario-value">${s.ram} GB</div></div>
      <div class="scenario-cell"><div class="scenario-key">AI memory</div><div class="scenario-value">${s.aiMem} GB</div></div>
      <div class="scenario-cell"><div class="scenario-key">AI watts*</div><div class="scenario-value">~${s.watts} W</div></div>
@@ -684,10 +692,14 @@ function drawBars(canvas, need){
  ctx.fillStyle="#8ab4f8";ctx.fillText("Target ≈ "+need.toFixed(0)+" GB",Math.min(x+6,w-120),16);
 }
 
+let lastRenderedBasis=null;
 function update(){
  refreshDisclosure();
+ if($("priceBasis").value!==lastRenderedBasis){
+   lastRenderedBasis=$("priceBasis").value;
+   renderScenarioInputs();
+ }
  $("priceBasisOut").textContent=$("priceBasis").value==="net" ? "Net (VAT excluded)" : "Gross (VAT included)";
- $("vatOut").textContent=(+$("vat").value).toFixed(1)+"%";
  $("cloudSpendOut").textContent=fmt(+$("cloudSpend").value);
  const presetKey=$("usagePreset").value;
  $("usagePresetOut").textContent=presetKey==="custom" ? "Custom" : workloadPresets[presetKey].label;
@@ -793,7 +805,7 @@ function loadState(){
  }catch(_){ /* Ignore corrupt/blocked storage and fall back to documented defaults. */ }
 }
 
-["priceBasis","vat","cloudSpend","includedTokens","overflowCost","years","elec","resale","privacy"].forEach(id=>$(id).addEventListener("input",update));
+["priceBasis","cloudSpend","includedTokens","overflowCost","years","elec","resale","privacy"].forEach(id=>$(id).addEventListener("input",update));
 $("usagePreset").addEventListener("change",e=>{
  if(e.target.value!=="custom") applyUsagePreset(e.target.value);
  else update();
