@@ -227,8 +227,8 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </div>
 
 <div class="field">
-<label for="tokensHour"><span>Agentic tokens / hour</span><strong id="tokensHourOut">120k</strong></label>
-<input id="tokensHour" type="range" min="10000" max="500000" step="10000" value="120000">
+<label for="tokensHour"><span>Agentic tokens / hour</span><strong id="tokensHourOut">80k</strong></label>
+<input id="tokensHour" type="range" min="10000" max="500000" step="10000" value="80000">
 <div class="small">Planning estimate for Claude Code-style work: prompt/context reads, tool loops, generated code and reasoning all count toward usage.</div>
 </div>
 
@@ -273,8 +273,8 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <h3>Model target</h3>
 <div class="small" style="margin:-4px 0 8px">Workload presets also choose a realistic model size, quantization and context/headroom target. Adjusting any of them switches the workload to Custom.</div>
 <div class="field">
-<label for="params"><span>Parameters</span><strong id="paramsOut">27B</strong></label>
-<input id="params" type="range" min="7" max="120" step="1" value="27">
+<label for="params"><span>Parameters</span><strong id="paramsOut">14B</strong></label>
+<input id="params" type="range" min="7" max="120" step="1" value="14">
 </div>
 <div class="field">
 <label for="quant"><span>Quantization</span></label>
@@ -287,8 +287,8 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </select>
 </div>
 <div class="field">
-<label for="overhead"><span>Context overhead</span><strong id="overheadOut">8 GB</strong></label>
-<input id="overhead" type="range" min="2" max="32" step="1" value="8">
+<label for="overhead"><span>Context overhead</span><strong id="overheadOut">6 GB</strong></label>
+<input id="overhead" type="range" min="2" max="32" step="1" value="6">
 <div class="small">KV cache + OS/apps + runtime headroom. Large context windows can make this brutally important.</div>
 </div>
 
@@ -372,7 +372,8 @@ const workstationCatalog = [
 
 const catalogGroups = [...new Set(workstationCatalog.map(x=>x.group))];
 const defaultIds = ["mbp-m5p-14-64","mini-m5p-64","studio-m5max-128","win-desktop-high"];
-const defaults = defaultIds.map(id => ({...workstationCatalog.find(x=>x.id===id)}));
+const defaults = defaultIds.map(id => workstationCatalog.find(x=>x.id===id));
+if(defaults.some(x=>!x)) throw new Error("defaultIds references an unknown workstation id");
 let scenarios = defaults.map(x=>({...x}));
 
 const $ = id => document.getElementById(id);
@@ -395,7 +396,9 @@ function esc(value){
  return String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
 
-const APP_STATE_KEY="local-ai-workstation-tool:v1";
+const APP_STATE_KEY="local-ai-workstation-tool:v2";
+// v1 keys (unversioned payload) are treated as incompatible and ignored; the documented
+// defaults are used instead of guessing at an older schema.
 const persistedInputIds=["priceBasis","vat","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","resale","privacy","params","quant","overhead"];
 
 const workloadPresets = {
@@ -472,8 +475,11 @@ function fitLabel(ram, need){
  return ["No","bad"];
 }
 function expLabel(s, ram, need){
+ // s is an estimated tokens/second; capping at 100 maps it onto the same scale as
+ // the thresholds below (>=75 pleasant, >=45 usable), so faster-than-100 systems
+ // cannot inflate the score and slow ones are judged as literal generation speed.
  const ratio=ram/need;
- let score=s*(ratio>=1.15?1:ratio>=1?0.75:ratio>=0.9?0.45:0.15);
+ let score=Math.min(100,s)*(ratio>=1.15?1:ratio>=1?0.75:ratio>=0.9?0.45:0.15);
  if(score>=75) return ["Pleasant","good"];
  if(score>=45) return ["Usable","warn"];
  return ["Frustrating","bad"];
@@ -587,6 +593,20 @@ function drawCostWatermark(ctx,x,y,w,h){
  ctx.restore();
 }
 
+function truncLabel(text,maxPx){
+ const str=String(text);
+ for(let len=str.length;len>1;len--){
+   if(ctxMeasureLabel(str.slice(0,len))<=maxPx) return str.slice(0,len-1)+"\u2026";
+ }
+ return str;
+}
+let labelMeasureCtx=null;
+function ctxMeasureLabel(t){
+ if(!labelMeasureCtx) labelMeasureCtx=document.createElement("canvas").getContext("2d");
+ labelMeasureCtx.font="12px system-ui";
+ return labelMeasureCtx.measureText(t).width;
+}
+
 function drawLines(canvas, series, maxY){
  const {ctx,w,h}=prepareCanvas(canvas);
  ctx.clearRect(0,0,w,h); ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
@@ -609,7 +629,7 @@ function drawLines(canvas, series, maxY){
    const y=pad.t+(h-pad.t-pad.b)*(1-p.y/maxY);
    idx?ctx.lineTo(x,y):ctx.moveTo(x,y);
   });ctx.stroke();
-  ctx.fillStyle=palette[si%palette.length];ctx.fillRect(w-195,pad.t+si*22,10,10);ctx.fillStyle="#cfd7df";ctx.fillText(ser.name,w-178,pad.t+9+si*22);
+  ctx.fillStyle=palette[si%palette.length];ctx.fillRect(w-195,pad.t+si*22,10,10);ctx.fillStyle="#cfd7df";ctx.fillText(truncLabel(ser.name,170),w-178,pad.t+9+si*22);
  });
 }
 
@@ -662,15 +682,17 @@ function update(){
  <div class="metric"><div class="k">Cloud cost over period (${basisLabel()})</div><div class="v">${fmt(cloud)}</div><div class="s">${fmt(cu.total)}/mo incl. estimated overflow</div></div>
  <div class="metric"><div class="k">Estimated cloud usage</div><div class="v">${(cu.tokens/1e6).toFixed(1)}M</div><div class="s">tokens/month · ${(cu.overflow/1e6).toFixed(1)}M overflow · ${+$("daysWeek").value} d/wk</div></div>
  <div class="metric"><div class="k">Privacy/offline value</div><div class="v">${fmt(privacy)}</div><div class="s">Subjective benefit over ${yrs} years</div></div>
- <div class="metric"><div class="k">Cheapest adjusted option</div><div class="v">${best.s.name}</div><div class="s">After VAT basis, resale, power and your privacy value</div></div>`;
+ <div class="metric"><div class="k">Cheapest adjusted option</div><div class="v">${esc(best.s.name)}</div><div class="s">After VAT basis, resale, power and your privacy value</div></div>`;
 
  const tb=$("tableBody");tb.innerHTML="";
  rows.forEach(r=>{
   const fit=fitLabel(r.s.aiMem,need), exp=expLabel(r.s.speed,r.s.aiMem,need);
-  const netMonthlySaving=(cu.total + +$("privacy").value)-r.monthly;
-  // Use the same VAT-adjusted purchase price used by lifecycle(). Using catalog gross
-  // price here would overstate break-even in Net mode by the VAT amount.
-  const breakEven=netMonthlySaving>0 ? r.purchase/netMonthlySaving : Infinity;
+  // Break-even must match the chart's local cost line: purchase + energy, with resale
+  // credited once at the end of the period. Crossover with the cloud line (whose monthly
+  // slope is cloud total + privacy) therefore uses energy-per-month, not the fully
+  // amortized r.monthly (which would double-count purchase and mis-credit resale).
+  const monthlyGap=(cu.total + +$("privacy").value) - r.energy/months;
+  const breakEven=monthlyGap>0 ? r.purchase/monthlyGap : Infinity;
   const tr=document.createElement("tr");
   tr.innerHTML=`<td>${esc(r.s.name)}</td><td>${r.s.ram} GB</td><td>${r.s.aiMem} GB</td><td>${fmt(r.net)}</td><td>${fmt(r.monthly)}</td>
   <td>${isFinite(breakEven)?breakEven.toFixed(0)+" mo":"Never"}</td>
@@ -679,24 +701,9 @@ function update(){
   tb.appendChild(tr);
  });
 
- let series=[{name:"Cloud",points:[]}];
- for(let m=0;m<=months;m++) series[0].points.push({x:m,y:cu.total*m});
- rows.forEach(r=>{
-   const ser={name:r.s.name,points:[]};
-   for(let m=0;m<=months;m++){
-    const frac=m/months;
-    const purchase=effectivePrice(r.s.price);
-    const resaleAtEnd=purchase*(+$("resale").value/100)*frac;
-    const energy=r.energy*frac;
-    ser.points.push({x:m,y:purchase-resaleAtEnd+energy});
-   }
-   series.push(ser);
- });
- const maxY=Math.max(...series.flatMap(s=>s.points.map(p=>p.y)))*1.08 || 1;
- drawLines($("costChart"),series,maxY);
- drawBars($("ramChart"),need);
+ redrawCharts();
  const cheapestCost=Math.min(cloud,...rows.map(r=>r.net));
- const cheapestName=cloud===cheapestCost ? "Cloud" : rows.find(r=>r.net===cheapestCost)?.s.name || "configured workstation";
+ const cheapestName=cloud===cheapestCost ? "Cloud" : esc(rows.find(r=>r.net===cheapestCost)?.s.name || "configured workstation");
  $("costChart").setAttribute("aria-label",`Cumulative cost comparison over ${yrs} years. Lowest modeled total is ${cheapestName} at approximately ${fmt(cheapestCost)}.`);
  $("ramChart").setAttribute("aria-label",`AI memory fit chart. Target is approximately ${need.toFixed(0)} GB. ${scenarios.map(s=>`${s.name}: ${s.aiMem} GB`).join("; ")}.`);
 
@@ -707,7 +714,7 @@ function update(){
  }else{
   const v=viable[0], delta=v.net-cloud;
   const cloudRate=cu.total, adjusted=cloud+privacy;
-  msg=`Using <b>${basisLabel().toLowerCase()} prices</b>, the cheapest machine that comfortably fits the target is <b>${v.s.name}</b>. Its estimated ownership cost is <b>${fmt(v.net)}</b> over ${yrs} years versus <b>${fmt(cloud)}</b> for cloud at roughly ${(cu.tokens/1e6).toFixed(1)}M tokens/month. `;
+  msg=`Using <b>${basisLabel().toLowerCase()} prices</b>, the cheapest machine that comfortably fits the target is <b>${esc(v.s.name)}</b>. Its estimated ownership cost is <b>${fmt(v.net)}</b> over ${yrs} years versus <b>${fmt(cloud)}</b> for cloud at roughly ${(cu.tokens/1e6).toFixed(1)}M tokens/month. `;
   if(cu.overflow>0) msg+=`At the current assumptions, about <b>${(cu.overflow/1e6).toFixed(1)}M tokens/month</b> exceed the subscription-equivalent allowance, adding approximately <b>${fmt(cu.overflowEffective)}/month</b> in paid overflow. `;
   else msg+=`The estimated workload remains inside the configured subscription-equivalent allowance, so no paid overflow is modeled. `;
   if(v.net<=adjusted) msg+=`Once you assign ${fmt(+$("privacy").value)}/month of value to privacy/offline access, the local option becomes economically defensible under your assumptions.`;
@@ -722,7 +729,7 @@ function update(){
 function saveState(){
  try{
    const inputs=Object.fromEntries(persistedInputIds.map(id=>[id,$(id).value]));
-   localStorage.setItem(APP_STATE_KEY,JSON.stringify({inputs,scenarioIds:scenarios.map(s=>s.id)}));
+   localStorage.setItem(APP_STATE_KEY,JSON.stringify({version:2,inputs,scenarioIds:scenarios.map(s=>s.id)}));
  }catch(_){ /* Private browsing/storage policies should never break the calculator. */ }
 }
 
@@ -731,10 +738,10 @@ function loadState(){
    const raw=localStorage.getItem(APP_STATE_KEY);
    if(!raw) return;
    const state=JSON.parse(raw);
-   for(const [id,value] of Object.entries(state.inputs||{})){
+   if(state.version!==2) return;   for(const [id,value] of Object.entries(state.inputs||{})){
      if($(id)) $(id).value=value;
    }
-   if(Array.isArray(state.scenarioIds) && state.scenarioIds.length===defaults.length){
+   if(Array.isArray(state.scenarioIds) && state.scenarioIds.length>0 && state.scenarioIds.length<=defaults.length){
      const restored=state.scenarioIds.map(id=>workstationCatalog.find(x=>x.id===id));
      if(restored.every(Boolean)) scenarios=restored.map(x=>({...x}));
    }
@@ -750,8 +757,29 @@ $("usagePreset").addEventListener("change",e=>{
  $(id).addEventListener("input",()=>{markUsageCustom();update();});
 });
 $("resetBtn").addEventListener("click",()=>{scenarios=defaults.map(x=>({...x}));renderScenarioInputs();update();});
+function redrawCharts(){
+ const months=(+$("years").value)*12, need=modelMemoryGB();
+ const cu=cloudUsageMonthly();
+ let series=[{name:"Cloud",points:[]}];
+ for(let m=0;m<=months;m++) series[0].points.push({x:m,y:cu.total*m});
+ const rows=scenarios.map(s=>({s,...lifecycle(s)}));
+ rows.forEach(r=>{
+   const ser={name:r.s.name,points:[]};
+   const purchase=effectivePrice(r.s.price);
+   const resaleCredit=purchase*(+$("resale").value/100);
+   for(let m=0;m<=months;m++){
+    const resaleAtEnd=(m===months)?resaleCredit:0;
+    const energy=r.energy*(m/months);
+    ser.points.push({x:m,y:purchase-resaleAtEnd+energy});
+   }
+   series.push(ser);
+ });
+ const maxY=Math.max(...series.flatMap(s=>s.points.map(p=>p.y)))*1.08 || 1;
+ drawLines($("costChart"),series,maxY);
+ drawBars($("ramChart"),need);
+}
 let resizeTimer;
-window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(update,100);});
+window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(redrawCharts,100);});
 loadState();
 renderScenarioInputs();update();
 </script>
