@@ -53,6 +53,12 @@ th{color:#cbd3dc;font-weight:600}
 .note{padding:12px 14px;border-left:3px solid var(--accent);background:#0e1216;border-radius:8px;color:#cfd7df;font-size:13px;line-height:1.45}
 button{background:#1a2430;border:1px solid #324154;color:var(--text);border-radius:10px;padding:8px 10px;cursor:pointer}
 button:hover{background:#223041}
+details.adv{border:1px solid var(--line);background:#0e1216;border-radius:12px;padding:2px 12px 10px;margin:12px 0}
+details.adv summary{cursor:pointer;font-size:13px;font-weight:600;color:#d8e0e8;padding:8px 0;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary:before{content:"\25B8";font-size:11px;color:var(--muted);display:inline-block;transition:transform .15s}
+details.adv[open] summary:before{transform:rotate(90deg)}
+.chip{font-size:10px;font-weight:700;color:var(--accent);border:1px solid #31404f;background:rgba(138,180,248,.08);padding:2px 7px;border-radius:999px}
 .scenario-card{background:#0e1216;border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
 .scenario-picker{margin-bottom:9px}
 .scenario-picker label{margin-bottom:5px}
@@ -188,7 +194,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 </select>
 </div>
 
-<div class="field">
+<div class="field" id="vatField">
 <label for="vat"><span>VAT rate</span><strong id="vatOut">25.5%</strong></label>
 <input id="vat" type="range" min="0" max="30" step="0.1" value="25.5">
 <div class="small">Entered hardware and cloud prices are treated as VAT-included consumer prices. Net mode removes this VAT from both.</div>
@@ -220,7 +226,9 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <input id="daysWeek" type="range" min="1" max="7" step="0.5" value="4">
 </div>
 
-<h3>Cloud usage estimate</h3>
+<details id="cloudDetails" class="adv">
+<summary>Cloud usage estimate <span class="chip" id="cloudChip" hidden>Custom</span></summary>
+<h3 style="margin:6px 0 0">Cloud usage estimate</h3>
 <div class="field">
 <label for="cloudHours"><span>Cloud AI use</span><strong id="cloudHoursOut">4.0 h/day</strong></label>
 <input id="cloudHours" type="range" min="0.25" max="24" step="0.25" value="4">
@@ -243,12 +251,15 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <input id="overflowCost" type="range" min="0.5" max="30" step="0.5" value="5">
 <div class="small">Blended API-equivalent net €/M token estimate after caching/input/output mix. Gross mode adds the selected VAT; Net mode leaves this rate unchanged.</div>
 </div>
+</details>
 
 <div class="field">
 <label for="years"><span>Ownership period</span><strong id="yearsOut">3 years</strong></label>
 <input id="years" type="range" min="1" max="6" step="0.5" value="3">
 </div>
 
+<details id="advancedDetails" class="adv">
+<summary>Advanced cost assumptions <span class="chip" id="advancedChip" hidden>Modified</span></summary>
 <div class="field">
 <label for="elec"><span>Electricity price</span><strong id="elecOut">€0.20/kWh</strong></label>
 <input id="elec" type="range" min="0.05" max="0.60" step="0.01" value="0.20">
@@ -269,9 +280,12 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <input id="privacy" type="range" min="0" max="150" step="5" value="20">
 <div class="small">Subjective benefit. Think: privacy, offline access, avoiding API limits, experimentation.</div>
 </div>
+</details>
 
 <h3>Model target</h3>
-<div class="small" style="margin:-4px 0 8px">Workload presets also choose a realistic model size, quantization and context/headroom target. Adjusting any of them switches the workload to Custom.</div>
+<details id="modelDetails" class="adv">
+<summary>Model size &amp; memory target <span class="chip" id="modelChip" hidden>Custom</span></summary>
+<div class="small" style="margin:6px 0 8px">Workload presets also choose a realistic model size, quantization and context/headroom target. Adjusting any of them switches the workload to Custom.</div>
 <div class="field">
 <label for="params"><span>Parameters</span><strong id="paramsOut">14B</strong></label>
 <input id="params" type="range" min="7" max="120" step="1" value="14">
@@ -291,6 +305,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <input id="overhead" type="range" min="2" max="32" step="1" value="6">
 <div class="small">KV cache + OS/apps + runtime headroom. Large context windows can make this brutally important.</div>
 </div>
+</details>
 
 <h3>Workstation scenarios</h3>
 <div id="scenarioInputs"></div>
@@ -390,6 +405,18 @@ function priceFromNet(net){
 }
 function basisLabel(){ return $("priceBasis").value==="net" ? "Net" : "Gross"; }
 
+// Progressive disclosure: the VAT rate only affects the calculation in Net mode, and
+// workload-driven sections stay collapsed unless the user goes Custom. Chips flag
+// collapsed sections whose values differ from the defaults/presets so nothing is lost.
+function refreshDisclosure(){
+ $("vatField").hidden=$("priceBasis").value!=="net";
+ const isCustom=$("usagePreset").value==="custom";
+ $("cloudChip").hidden=!isCustom;
+ $("modelChip").hidden=!isCustom;
+ const advModified=Object.entries(advancedDefaults).some(([id,v])=>$(id).value!==v);
+ $("advancedChip").hidden=!advModified;
+}
+
 // Catalog strings are currently static, but escaping here prevents future catalog edits
 // (or externally sourced names) from turning template interpolation into HTML.
 function esc(value){
@@ -400,6 +427,7 @@ const APP_STATE_KEY="local-ai-workstation-tool:v2";
 // v1 keys (unversioned payload) are treated as incompatible and ignored; the documented
 // defaults are used instead of guessing at an older schema.
 const persistedInputIds=["priceBasis","vat","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","resale","privacy","params","quant","overhead"];
+const advancedDefaults={elec:"0.20",hours:"4",resale:"35",privacy:"20"};
 
 const workloadPresets = {
  starter:{
@@ -460,7 +488,12 @@ function applyUsagePreset(key){
 }
 
 function markUsageCustom(){
- if($("usagePreset").value!=="custom") $("usagePreset").value="custom";
+ if($("usagePreset").value!=="custom"){
+   $("usagePreset").value="custom";
+   // Opening these blocks signals that manual values are now authoritative.
+   $("cloudDetails").open=true;
+   $("modelDetails").open=true;
+ }
 }
 
 function modelMemoryGB(){
@@ -652,6 +685,7 @@ function drawBars(canvas, need){
 }
 
 function update(){
+ refreshDisclosure();
  $("priceBasisOut").textContent=$("priceBasis").value==="net" ? "Net (VAT excluded)" : "Gross (VAT included)";
  $("vatOut").textContent=(+$("vat").value).toFixed(1)+"%";
  $("cloudSpendOut").textContent=fmt(+$("cloudSpend").value);
@@ -729,7 +763,7 @@ function update(){
 function saveState(){
  try{
    const inputs=Object.fromEntries(persistedInputIds.map(id=>[id,$(id).value]));
-   localStorage.setItem(APP_STATE_KEY,JSON.stringify({version:2,inputs,scenarioIds:scenarios.map(s=>s.id)}));
+   localStorage.setItem(APP_STATE_KEY,JSON.stringify({version:2,inputs,scenarioIds:scenarios.map(s=>s.id),disclosure:{cloud:$("cloudDetails").open,model:$("modelDetails").open,advanced:$("advancedDetails").open}}));
  }catch(_){ /* Private browsing/storage policies should never break the calculator. */ }
 }
 
@@ -745,6 +779,17 @@ function loadState(){
      const restored=state.scenarioIds.map(id=>workstationCatalog.find(x=>x.id===id));
      if(restored.every(Boolean)) scenarios=restored.map(x=>({...x}));
    }
+   // Persisted disclosure state wins so a returning user finds the panels as they left
+   // them; otherwise collapsed-by-default keeps the first visit simple.
+   const disc=state.disclosure||{};
+   // A restored params/quant/overhead that differs from the preset's values must show
+   // as Custom, otherwise the summary text would misdescribe the active assumption.
+   const wp=workloadPresets[state.inputs&&state.inputs.usagePreset];
+   if(wp && ["params","quant","overhead","tokensHour"].some(k=>state.inputs[k]!==undefined && String(state.inputs[k])!==String(wp[k==="tokensHour"?"tokensHour":k])))
+     $("usagePreset").value="custom";
+   if(disc.cloud!==undefined) $("cloudDetails").open=!!disc.cloud;
+   if(disc.model!==undefined) $("modelDetails").open=!!disc.model;
+   if(disc.advanced!==undefined) $("advancedDetails").open=!!disc.advanced;
  }catch(_){ /* Ignore corrupt/blocked storage and fall back to documented defaults. */ }
 }
 
@@ -756,7 +801,16 @@ $("usagePreset").addEventListener("change",e=>{
 ["hours","cloudHours","daysWeek","tokensHour","params","quant","overhead"].forEach(id=>{
  $(id).addEventListener("input",()=>{markUsageCustom();update();});
 });
+["cloudDetails","modelDetails","advancedDetails"].forEach(id=>{
+ $(id).addEventListener("toggle",()=>saveState());
+});
 $("resetBtn").addEventListener("click",()=>{scenarios=defaults.map(x=>({...x}));renderScenarioInputs();update();});
+// Resetting to defaults also clears the advanced-cost overrides and re-collapses the
+// disclosure panels so the view matches a documented fresh start.
+$("resetBtn").addEventListener("click",()=>{
+ Object.entries(advancedDefaults).forEach(([id,v])=>$(id).value=v);
+ ["cloudDetails","modelDetails","advancedDetails"].forEach(id=>$(id).open=false);
+});
 function redrawCharts(){
  const months=(+$("years").value)*12, need=modelMemoryGB();
  const cu=cloudUsageMonthly();
