@@ -40,7 +40,10 @@ input[type=range]{width:100%}
 .metric .s{font-size:12px;color:var(--muted);margin-top:4px}
 .good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
 canvas{width:100%;height:260px;background:#0e1216;border-radius:12px;border:1px solid var(--line)}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend-key{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px}
+.chart-legend span{overflow-wrap:anywhere;min-width:0}
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -64,7 +67,7 @@ details.adv[open] summary:before{transform:rotate(90deg)}
 .scenario-picker label{margin-bottom:5px}
 .scenario-picker select{font-weight:600}
 .scenario-detail{font-size:11px;color:var(--muted);margin:-2px 0 9px;line-height:1.35}
-.scenario-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.scenario-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .scenario-cell{min-width:0;background:#12171d;border:1px solid #252d35;border-radius:8px;padding:7px}
 .scenario-key{display:block;font-size:9px;color:var(--muted);margin:0 0 3px}
 .scenario-value{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -91,7 +94,6 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
   .card{padding:14px;border-radius:14px}
   .grid{grid-template-columns:1fr}
   .metric .v{font-size:20px}
-  .scenario-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
   canvas{height:220px}
   table{font-size:12px}
   th,td{padding:8px 6px}
@@ -109,7 +111,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
     <div class="hero-copy">
       <div class="hero-kicker">cat-assisted planning • local AI economics</div>
       <h1><span class="title-main">Local AI</span> <span class="title-accent">Workstation Decision Tool</span></h1>
-      <p>Compare local hardware against cloud AI. Adjust cost, RAM, model size, usage, electricity and ownership period. The model deliberately separates “fits in memory” from “pleasant to use.”</p>
+      <p>Compare local hardware against cloud AI. Estimate cash costs, memory fit and subjective privacy value. Model quality and generation speed require validation with your actual workload.</p>
       <div class="hero-note">Now with subtle ragdoll supervision, because no serious infrastructure decision should escape feline review.</div>
     </div>
     <div class="hero-visual" aria-hidden="true">
@@ -232,7 +234,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 
 <div class="field">
 <label for="tokensHour"><span>Agentic tokens / hour</span><strong id="tokensHourOut">80k</strong></label>
-<input id="tokensHour" type="range" min="10000" max="500000" step="10000" value="80000">
+<input id="tokensHour" type="range" min="10000" max="500000" step="5000" value="80000">
 <div class="small">Planning estimate for Claude Code-style work: prompt/context reads, tool loops, generated code and reasoning all count toward usage.</div>
 </div>
 
@@ -245,7 +247,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <div class="field">
 <label for="overflowCost"><span>Paid overflow cost (net)</span><strong id="overflowCostOut">€5.00/M</strong></label>
 <input id="overflowCost" type="range" min="0.5" max="30" step="0.5" value="5">
-<div class="small">Blended API-equivalent net €/M token estimate after caching/input/output mix. Gross mode adds the selected VAT; Net mode leaves this rate unchanged.</div>
+<div class="small">Blended API-equivalent net €/M token estimate after caching/input/output mix. Gross mode adds Finnish VAT; Net mode leaves this rate unchanged.</div>
 </div>
 </details>
 
@@ -257,7 +259,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <details id="advancedDetails" class="adv">
 <summary>Advanced cost assumptions <span class="chip" id="advancedChip" hidden>Modified</span></summary>
 <div class="field">
-<label for="elec"><span>Electricity price</span><strong id="elecOut">€0.20/kWh</strong></label>
+<label for="elec"><span>Electricity price (selected basis)</span><strong id="elecOut">€0.20/kWh</strong></label>
 <input id="elec" type="range" min="0.05" max="0.60" step="0.01" value="0.20">
 </div>
 
@@ -268,11 +270,24 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 
 <div class="field">
 <label><span>Estimated resale after ownership period</span><strong id="resaleOut"></strong></label>
-<div class="small">Typical workstation depreciation curve: steep in year one, flattening later. Planning estimate, not a market quote.</div>
+<div class="small">Generic planning curve, not a market quote. Different hardware can depreciate very differently.</div>
+</div>
+<div class="field">
+<label for="resaleMode">Resale assumption</label>
+<select id="resaleMode"><option value="curve" selected>Generic depreciation curve</option><option value="manual">Custom resale percentage</option></select>
+</div>
+<div class="field" id="resaleManualField" hidden>
+<label for="resalePercent"><span>Resale at end of ownership</span><strong id="resalePercentOut">40%</strong></label>
+<input id="resalePercent" type="range" min="0" max="90" step="1" value="40">
+</div>
+<div class="field">
+<label for="retainedCloud"><span>Cloud cost retained with local hardware</span><strong id="retainedCloudOut">0%</strong></label>
+<input id="retainedCloud" type="range" min="0" max="100" step="5" value="0">
+<div class="small">Share of the modeled cloud bill you still pay for fallback or subscriptions. 0% assumes full replacement; task quality and throughput are not modeled. Privacy value is reduced by this same fraction.</div>
 </div>
 
 <div class="field">
-<label for="privacy"><span>Value of privacy/offline access</span><strong id="privacyOut">€20/mo</strong></label>
+<label for="privacy"><span>Value of fully local privacy/offline access</span><strong id="privacyOut">€20/mo</strong></label>
 <input id="privacy" type="range" min="0" max="150" step="5" value="20">
 <div class="small">Subjective benefit. Think: privacy, offline access, avoiding API limits, experimentation.</div>
 </div>
@@ -281,7 +296,7 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <h3>Model target</h3>
 <details id="modelDetails" class="adv">
 <summary>Model size &amp; memory target <span class="chip" id="modelChip" hidden>Custom</span></summary>
-<div class="small" style="margin:6px 0 8px">Workload presets also choose a realistic model size, quantization and context/headroom target. Adjusting any of them switches the workload to Custom.</div>
+<div class="small" style="margin:6px 0 8px">Workload presets suggest a model size, quantization and context/headroom target; they do not establish equivalent cloud quality. Adjusting any of them switches the workload to Custom.</div>
 <div class="field">
 <label for="params"><span>Parameters</span><strong id="paramsOut">14B</strong></label>
 <input id="params" type="range" min="7" max="120" step="1" value="14">
@@ -306,9 +321,9 @@ footer{max-width:1600px;margin:auto;padding:0 clamp(14px,2vw,28px) 30px;color:va
 <h3>Workstation scenarios</h3>
 <div id="scenarioInputs"></div>
 <div class="small" style="margin:8px 0 10px">
-Apple systems use current Finnish Apple Store gross pricing/configuration options where available. M6 Mac mini supports 16/24/32 GB; M5 Pro mini extends to 48/64 GB on the higher chip. Mac Studio currently ranges from 36 GB M5 Max to 256 GB M5 Ultra; Apple lists 512 GB M5 Ultra as coming later in October. Windows/Linux systems are representative Finnish-market estimates. Mac AI memory = unified memory; NVIDIA AI memory = GPU VRAM. Four comparison slots are intentional to keep the charts readable on phones and desktops. *Power and AI speed are planning estimates for sustained local inference, not vendor specifications or benchmark results.
+Apple catalog prices are static Finnish Store planning inputs, not live quotes. Verify current configurations and prices before purchase. M6 Mac mini supports 16/24/32 GB; M5 Pro mini extends to 48/64 GB on the higher chip. Mac Studio currently ranges from 36 GB M5 Max to 256 GB M5 Ultra; Apple lists 512 GB M5 Ultra as coming later in October. Windows/Linux systems are representative Finnish-market estimates. Mac AI memory = unified memory; NVIDIA AI memory = GPU VRAM. Memory capacity does not guarantee runtime allocation or multi-GPU compatibility. Four comparison slots are intentional to keep the charts readable on phones and desktops. *Power is a planning estimate. Speed is unverified: no model-specific benchmarks are included.
 </div>
-<button id="resetBtn">Reset workstation presets</button>
+<button id="resetBtn">Reset all assumptions &amp; workstations</button>
 </section>
 
 <section>
@@ -318,6 +333,8 @@ Apple systems use current Finnish Apple Store gross pricing/configuration option
 <div class="card">
 <h2>Cumulative cost over ownership period</h2>
 <canvas id="costChart" role="img" aria-label="Cumulative local-versus-cloud cost chart">Cumulative local-versus-cloud cost chart.</canvas>
+<div id="costLegend" class="chart-legend" aria-label="Cost chart legend"></div>
+<div class="small" style="margin-top:8px">Cash costs only; privacy value is excluded. Resale is credited at the final month. Local costs include any retained cloud bill.</div>
 </div>
 <div class="card">
 <h2>AI memory fit vs target model</h2>
@@ -326,11 +343,11 @@ Apple systems use current Finnish Apple Store gross pricing/configuration option
 </div>
 
 <div class="card" style="margin-top:16px">
-<h2>Scenario comparison</h2><div class="small" style="margin:-8px 0 10px">Workstation prices are stored as gross consumer prices; the selected VAT basis is applied automatically. Apple entries use Finnish store pricing where available; generic PC/server entries are estimates.</div>
+<h2>Scenario comparison</h2><div class="small">Cash break-even is the first crossover within the selected ownership period, including resale at sale. Memory fit is a heuristic; generation speed and task quality require model/runtime benchmarks.</div><div class="small" style="margin:8px 0 10px">Workstation prices are stored as gross consumer prices; the selected VAT basis is applied automatically. Apple entries use Finnish store pricing where available; generic PC/server entries are estimates.</div>
 <div class="table-wrap">
 <table>
 <thead><tr>
-<th scope="col">Scenario</th><th scope="col">RAM</th><th scope="col">AI memory</th><th scope="col">Ownership cost</th><th scope="col">Monthly equiv.</th><th scope="col">Break-even</th><th scope="col">Model fit</th><th scope="col">Use experience</th>
+<th scope="col">Scenario</th><th scope="col">RAM</th><th scope="col">AI memory</th><th scope="col">Ownership cost</th><th scope="col">Monthly equiv.</th><th scope="col">Cash break-even</th><th scope="col">Memory fit</th><th scope="col">Runtime validation</th>
 </tr></thead>
 <tbody id="tableBody"></tbody>
 </table>
@@ -345,40 +362,101 @@ Apple systems use current Finnish Apple Store gross pricing/configuration option
 </main>
 
 <footer>
-This is a planning model, not a benchmark database. Apple source prices use current Finnish Apple Store gross pricing; generic Windows/Linux prices are representative estimates. Hardware and cloud-subscription inputs are stored gross; Net mode removes the fixed Finnish general VAT of 25.5% (Gross mode adds it to the net API-equivalent overflow rate). The paid-overflow €/M token input is deliberately treated as a net API-equivalent rate: Gross mode adds VAT, Net mode does not. Local electricity models AI-active compute only and excludes ordinary idle/sleep power, because idle behaviour varies too much by device and user; this slightly favours local hardware if a machine is left powered on for long periods. AI power and speed are planning estimates, not vendor specifications. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
+This is a planning model, not a benchmark database. Apple catalog prices are static Finnish Store planning inputs, not live quotes; generic Windows/Linux prices are representative estimates. Hardware and cloud-subscription inputs are stored gross; Net mode removes the fixed Finnish general VAT of 25.5% (Gross mode adds it to the net API-equivalent overflow rate). The paid-overflow €/M token input is deliberately treated as a net API-equivalent rate: Gross mode adds VAT, Net mode does not. Local electricity models AI-active compute only and excludes ordinary idle/sleep power, because idle behaviour varies too much by device and user; this slightly favours local hardware if a machine is left powered on for long periods. AI power is a planning estimate. Generation speed is unverified; memory fit is not proof of equivalent performance or task quality. Cloud token-equivalent allowance, tokens/hour and workload presets are planning estimates because subscription limits are not literal monthly token buckets and agentic workloads vary sharply by repository and workflow. Real token/s depends heavily on model architecture, quantization, context, backend, batching and software quality.
 </footer>
+
+<script id="calculator-model">
+// Pure calculations shared by every output. No DOM, storage, or rendering dependencies.
+const CalculatorModel = (()=>{
+ const VAT_RATE=0.255;
+ const RESALE_ANCHORS=[[0.5,0.90],[1,0.80],[2,0.55],[3,0.40],[4,0.28],[5,0.20],[6,0.14]];
+ function resaleFraction(years){
+  if(years<=RESALE_ANCHORS[0][0]) return RESALE_ANCHORS[0][1];
+  for(let i=1;i<RESALE_ANCHORS.length;i++){
+   const [x0,y0]=RESALE_ANCHORS[i-1], [x1,y1]=RESALE_ANCHORS[i];
+   if(years<=x1) return y0+(y1-y0)*(years-x0)/(x1-x0);
+  }
+  return RESALE_ANCHORS.at(-1)[1];
+ }
+ function breakEven(purchase, recurring, cloudMonthly, months, resaleCredit){
+  const gap=cloudMonthly-recurring;
+  const crossing=gap>0 ? purchase/gap : Infinity;
+  if(crossing<=months) return {month:crossing,atSale:false};
+  if(purchase+recurring*months-resaleCredit<=cloudMonthly*months)
+   return {month:months,atSale:true};
+  return null;
+ }
+ function calculate(a,scenarios){
+  const months=a.years*12, daysPerMonth=365.25/12*a.daysWeek/7;
+  const factor=a.priceBasis==='net'?1/(1+VAT_RATE):1;
+  const tokens=a.cloudHours*daysPerMonth*a.tokensHour;
+  const overflow=Math.max(0,tokens-a.includedTokens);
+  const overflowEffective=overflow/1e6*a.overflowCost*(a.priceBasis==='gross'?1+VAT_RATE:1);
+  const cloudMonthly=a.cloudSpend*factor+overflowEffective;
+  const cloud=cloudMonthly*months;
+  const retainedFraction=a.retainedCloud/100;
+  const retainedMonthly=cloudMonthly*retainedFraction;
+  const privacyMonthly=a.privacy*(1-retainedFraction);
+  const privacy=privacyMonthly*months;
+  const need=a.params*a.quant+a.overhead;
+  const resale=a.resaleMode==='manual'?a.resalePercent/100:resaleFraction(a.years);
+  const rows=scenarios.map(s=>{
+   const purchase=s.price*factor;
+   const energyMonthly=s.watts/1000*a.hours*daysPerMonth*a.elec;
+   const recurring=energyMonthly+retainedMonthly;
+   const resaleCredit=purchase*resale;
+   const net=purchase+recurring*months-resaleCredit;
+   const points=Array.from({length:months+1},(_,m)=>({x:m,y:purchase+recurring*m}));
+   // Two points at the same x draw a discrete sale, not a month-long rebate.
+   points.push({x:months,y:net});
+   return {s,purchase,energy:energyMonthly*months,retained:retainedMonthly*months,
+    resaleCredit,net,monthly:net/months,adjusted:net-privacy,
+    viable:s.aiMem>=need*1.05,
+    breakEven:breakEven(purchase,recurring,cloudMonthly,months,resaleCredit),points};
+  });
+  const viable=rows.filter(r=>r.viable).sort((a,b)=>a.net-b.net);
+  const bestLocal=viable[0]||null;
+  const winner=bestLocal && bestLocal.adjusted<cloud ? {name:bestLocal.s.name,cost:bestLocal.adjusted,local:true} : {name:'Cloud',cost:cloud,local:false};
+  const cloudPoints=Array.from({length:months+1},(_,m)=>({x:m,y:cloudMonthly*m}));
+  return {months,need,tokens,overflow,overflowEffective,cloudMonthly,cloud,privacy,
+   retainedMonthly,privacyMonthly,resale,rows,bestLocal,winner,
+   series:[{name:'Cloud',points:cloudPoints},...rows.map(r=>({name:r.s.name,points:r.points}))]};
+ }
+ return {VAT_RATE,resaleFraction,breakEven,calculate};
+})();
+</script>
 
 <script>
 const workstationCatalog = [
-  {group:"MacBook Pro",id:"mbp-m5-14-24",name:'MacBook Pro 14" M5 — 24 GB / 1 TB',price:2519,ram:24,aiMem:24,watts:30,speed:38,chip:"M5 10C CPU / 10C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"MacBook Pro",id:"mbp-m5p-14-48",name:'MacBook Pro 14" M5 Pro — 48 GB / 1 TB',price:3299,ram:48,aiMem:48,watts:60,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"MacBook Pro",id:"mbp-m5p-14-64",name:'MacBook Pro 14" M5 Pro — 64 GB / 1 TB',price:3739,ram:64,aiMem:64,watts:60,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"MacBook Pro",id:"mbp-m5m-14-128",name:'MacBook Pro 14" M5 Max — 128 GB / 2 TB',price:7809,ram:128,aiMem:128,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"2 TB",priceType:"Apple Finland"},
-  {group:"MacBook Pro",id:"mbp-m5m-16-128",name:'MacBook Pro 16" M5 Max — 128 GB / 2 TB',price:8049,ram:128,aiMem:128,watts:96,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"2 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5-14-24",name:'MacBook Pro 14" M5 — 24 GB / 1 TB',price:2519,ram:24,aiMem:24,watts:30,chip:"M5 10C CPU / 10C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5p-14-48",name:'MacBook Pro 14" M5 Pro — 48 GB / 1 TB',price:3299,ram:48,aiMem:48,watts:60,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5p-14-64",name:'MacBook Pro 14" M5 Pro — 64 GB / 1 TB',price:3739,ram:64,aiMem:64,watts:60,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5m-14-128",name:'MacBook Pro 14" M5 Max — 128 GB / 2 TB',price:7809,ram:128,aiMem:128,watts:88,chip:"M5 Max 18C CPU / 40C GPU",storage:"2 TB",priceType:"Apple Finland"},
+  {group:"MacBook Pro",id:"mbp-m5m-16-128",name:'MacBook Pro 16" M5 Max — 128 GB / 2 TB',price:8049,ram:128,aiMem:128,watts:96,chip:"M5 Max 18C CPU / 40C GPU",storage:"2 TB",priceType:"Apple Finland"},
 
-  {group:"Mac mini",id:"mini-m6-16",name:"Mac mini M6 — 16 GB / 256 GB",price:1099,ram:16,aiMem:16,watts:26,speed:44,chip:"M6 12C CPU / 12C GPU",storage:"256 GB",priceType:"Apple Finland"},
-  {group:"Mac mini",id:"mini-m6-24",name:"Mac mini M6 — 24 GB / 512 GB",price:1539,ram:24,aiMem:24,watts:28,speed:44,chip:"M6 12C CPU / 12C GPU",storage:"512 GB",priceType:"Apple Finland"},
-  {group:"Mac mini",id:"mini-m6-32",name:"Mac mini M6 — 32 GB / 512 GB",price:1759,ram:32,aiMem:32,watts:29,speed:44,chip:"M6 12C CPU / 12C GPU",storage:"512 GB",priceType:"Apple Finland"},
-  {group:"Mac mini",id:"mini-m5p-24",name:"Mac mini M5 Pro — 24 GB / 512 GB",price:2049,ram:24,aiMem:24,watts:48,speed:68,chip:"M5 Pro 15C CPU / 16C GPU",storage:"512 GB",priceType:"Apple Finland"},
-  {group:"Mac mini",id:"mini-m5p-32",name:"Mac mini M5 Pro — 32 GB / 512 GB",price:2269,ram:32,aiMem:32,watts:49,speed:68,chip:"M5 Pro 15C CPU / 16C GPU",storage:"512 GB",priceType:"Apple Finland"},
-  {group:"Mac mini",id:"mini-m5p-48",name:"Mac mini M5 Pro 18C/20C — 48 GB / 1 TB",price:3259,ram:48,aiMem:48,watts:58,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"Mac mini",id:"mini-m5p-64",name:"Mac mini M5 Pro 18C/20C — 64 GB / 1 TB",price:3699,ram:64,aiMem:64,watts:58,speed:80,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m6-16",name:"Mac mini M6 — 16 GB / 256 GB",price:1099,ram:16,aiMem:16,watts:26,chip:"M6 12C CPU / 12C GPU",storage:"256 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m6-24",name:"Mac mini M6 — 24 GB / 512 GB",price:1539,ram:24,aiMem:24,watts:28,chip:"M6 12C CPU / 12C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m6-32",name:"Mac mini M6 — 32 GB / 512 GB",price:1759,ram:32,aiMem:32,watts:29,chip:"M6 12C CPU / 12C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-24",name:"Mac mini M5 Pro — 24 GB / 512 GB",price:2049,ram:24,aiMem:24,watts:48,chip:"M5 Pro 15C CPU / 16C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-32",name:"Mac mini M5 Pro — 32 GB / 512 GB",price:2269,ram:32,aiMem:32,watts:49,chip:"M5 Pro 15C CPU / 16C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-48",name:"Mac mini M5 Pro 18C/20C — 48 GB / 1 TB",price:3259,ram:48,aiMem:48,watts:58,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac mini",id:"mini-m5p-64",name:"Mac mini M5 Pro 18C/20C — 64 GB / 1 TB",price:3699,ram:64,aiMem:64,watts:58,chip:"M5 Pro 18C CPU / 20C GPU",storage:"1 TB",priceType:"Apple Finland"},
 
-  {group:"Mac Studio",id:"studio-m5max-36",name:"Mac Studio M5 Max — 36 GB / 512 GB",price:3099,ram:36,aiMem:36,watts:78,speed:92,chip:"M5 Max 18C CPU / 32C GPU",storage:"512 GB",priceType:"Apple Finland"},
-  {group:"Mac Studio",id:"studio-m5max-48",name:"Mac Studio M5 Max — 48 GB / 1 TB",price:4089,ram:48,aiMem:48,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"Mac Studio",id:"studio-m5max-64",name:"Mac Studio M5 Max — 64 GB / 1 TB",price:4529,ram:64,aiMem:64,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"Mac Studio",id:"studio-m5max-128",name:"Mac Studio M5 Max — 128 GB / 1 TB",price:6289,ram:128,aiMem:128,watts:88,speed:100,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"Mac Studio",id:"studio-m5ultra-96",name:"Mac Studio M5 Ultra 30C/64C — 96 GB / 1 TB",price:6799,ram:96,aiMem:96,watts:140,speed:150,chip:"M5 Ultra 30C CPU / 64C GPU",storage:"1 TB",priceType:"Apple Finland"},
-  {group:"Mac Studio",id:"studio-m5ultra-256",name:"Mac Studio M5 Ultra 36C/80C — 256 GB / 1 TB",price:11199,ram:256,aiMem:256,watts:155,speed:165,chip:"M5 Ultra 36C CPU / 80C GPU",storage:"1 TB",priceType:"Apple config price estimate"},
+  {group:"Mac Studio",id:"studio-m5max-36",name:"Mac Studio M5 Max — 36 GB / 512 GB",price:3099,ram:36,aiMem:36,watts:78,chip:"M5 Max 18C CPU / 32C GPU",storage:"512 GB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5max-48",name:"Mac Studio M5 Max — 48 GB / 1 TB",price:4089,ram:48,aiMem:48,watts:88,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5max-64",name:"Mac Studio M5 Max — 64 GB / 1 TB",price:4529,ram:64,aiMem:64,watts:88,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5max-128",name:"Mac Studio M5 Max — 128 GB / 1 TB",price:6289,ram:128,aiMem:128,watts:88,chip:"M5 Max 18C CPU / 40C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5ultra-96",name:"Mac Studio M5 Ultra 30C/64C — 96 GB / 1 TB",price:6799,ram:96,aiMem:96,watts:140,chip:"M5 Ultra 30C CPU / 64C GPU",storage:"1 TB",priceType:"Apple Finland"},
+  {group:"Mac Studio",id:"studio-m5ultra-256",name:"Mac Studio M5 Ultra 36C/80C — 256 GB / 1 TB",price:11199,ram:256,aiMem:256,watts:155,chip:"M5 Ultra 36C CPU / 80C GPU",storage:"1 TB",priceType:"Apple config price estimate"},
 
-  {group:"Windows laptop",id:"win-typical",name:"Typical Windows laptop — integrated GPU",price:1200,ram:32,aiMem:8,watts:35,speed:22,chip:"Modern Core Ultra / Ryzen AI, integrated GPU",storage:"1 TB",priceType:"Estimated Finland"},
-  {group:"Windows laptop",id:"win-gaming-mid",name:"Average gaming laptop — RTX 5070 8 GB",price:1900,ram:32,aiMem:8,watts:150,speed:72,chip:"Modern Ryzen/Core + RTX 5070 Laptop",storage:"1 TB",priceType:"Estimated Finland"},
-  {group:"Windows laptop",id:"win-gaming-high",name:"Powerful gaming laptop — RTX 5090 24 GB",price:4300,ram:64,aiMem:24,watts:200,speed:150,chip:"High-end Ryzen/Core + RTX 5090 Laptop",storage:"2 TB",priceType:"Estimated Finland"},
+  {group:"Windows laptop",id:"win-typical",name:"Typical Windows laptop — integrated GPU",price:1200,ram:32,aiMem:8,watts:35,chip:"Modern Core Ultra / Ryzen AI, integrated GPU",storage:"1 TB",priceType:"Estimated Finland"},
+  {group:"Windows laptop",id:"win-gaming-mid",name:"Average gaming laptop — RTX 5070 8 GB",price:1900,ram:32,aiMem:8,watts:150,chip:"Modern Ryzen/Core + RTX 5070 Laptop",storage:"1 TB",priceType:"Estimated Finland"},
+  {group:"Windows laptop",id:"win-gaming-high",name:"Powerful gaming laptop — RTX 5090 24 GB",price:4300,ram:64,aiMem:24,watts:200,chip:"High-end Ryzen/Core + RTX 5090 Laptop",storage:"2 TB",priceType:"Estimated Finland"},
 
-  {group:"Windows desktop",id:"win-desktop-mid",name:"Average gaming desktop — RTX 5070 Ti 16 GB",price:2200,ram:32,aiMem:16,watts:420,speed:125,chip:"Modern Ryzen/Core + RTX 5070 Ti",storage:"2 TB",priceType:"Estimated Finland"},
-  {group:"Windows desktop",id:"win-desktop-high",name:"Powerful gaming desktop — RTX 5090 32 GB",price:5200,ram:64,aiMem:32,watts:700,speed:230,chip:"High-end Ryzen/Core + RTX 5090",storage:"2 TB",priceType:"Estimated Finland"},
+  {group:"Windows desktop",id:"win-desktop-mid",name:"Average gaming desktop — RTX 5070 Ti 16 GB",price:2200,ram:32,aiMem:16,watts:420,chip:"Modern Ryzen/Core + RTX 5070 Ti",storage:"2 TB",priceType:"Estimated Finland"},
+  {group:"Windows desktop",id:"win-desktop-high",name:"Powerful gaming desktop — RTX 5090 32 GB",price:5200,ram:64,aiMem:32,watts:700,chip:"High-end Ryzen/Core + RTX 5090",storage:"2 TB",priceType:"Estimated Finland"},
 
-  {group:"Linux AI server",id:"linux-ai-dual5090",name:"Dedicated Linux AI server — dual RTX 5090",price:9500,ram:128,aiMem:64,watts:1200,speed:390,chip:"High-core-count CPU + 2× RTX 5090 32 GB",storage:"4 TB NVMe",priceType:"Estimated Finland"}
+  {group:"Linux AI server",id:"linux-ai-dual5090",name:"Dedicated Linux AI server — dual RTX 5090",price:9500,ram:128,aiMem:64,watts:1200,chip:"High-core-count CPU + 2× RTX 5090 32 GB",storage:"4 TB NVMe",priceType:"Estimated Finland"}
 ];
 
 const catalogGroups = [...new Set(workstationCatalog.map(x=>x.group))];
@@ -392,41 +470,21 @@ const fmt = n => new Intl.NumberFormat('en-FI',{style:'currency',currency:'EUR',
 // Hardware and subscription catalog prices are stored as VAT-inclusive consumer prices.
 // Keeping one canonical gross value lets the same scenario switch cleanly between personal
 // (gross) and VAT-deductible business (net) economics without duplicating catalog data.
-const VAT_RATE=0.255;
-// Resale value follows a depreciation curve rather than one flat percentage:
-// hardware loses most value in the first year and flattens afterwards. Anchor
-// points are planning estimates typical of workstations (Apple Silicon holds
-// value relatively well; gaming PCs depreciate faster).
-const RESALE_ANCHORS=[[0.5,0.90],[1,0.80],[2,0.55],[3,0.40],[4,0.28],[5,0.20],[6,0.14]];
-function resaleFraction(years){
- const pts=RESALE_ANCHORS;
- if(years<=pts[0][0]) return pts[0][1];
- for(let i=1;i<pts.length;i++){
-   if(years<=pts[i][0]){
-     const [x0,y0]=pts[i-1],[x1,y1]=pts[i];
-     return y0+(y1-y0)*((years-x0)/(x1-x0));
-   }
- }
- return pts[pts.length-1][1];
-}
+const {VAT_RATE}=CalculatorModel;
 function priceFactor(){
   return $("priceBasis").value==="net" ? 1/(1+VAT_RATE) : 1;
 }
 function effectivePrice(gross){ return gross*priceFactor(); }
-function priceFromNet(net){
-  return $("priceBasis").value==="gross" ? net*(1+VAT_RATE) : net;
-}
 function basisLabel(){ return $("priceBasis").value==="net" ? "Net" : "Gross"; }
 
-// Progressive disclosure: the VAT rate only affects the calculation in Net mode, and
-// workload-driven sections stay collapsed unless the user goes Custom. Chips flag
-// collapsed sections whose values differ from the defaults/presets so nothing is lost.
+// Chips compare numeric values, since browsers normalize range value strings.
 function refreshDisclosure(){
  const isCustom=$("usagePreset").value==="custom";
- $("cloudChip").hidden=!isCustom;
+ $("cloudChip").hidden=!(isCustom || ["includedTokens","overflowCost"].some(id=>+$(id).value!==+$(id).defaultValue));
  $("modelChip").hidden=!isCustom;
- const advModified=Object.entries(advancedDefaults).some(([id,v])=>$(id).value!==v);
- $("advancedChip").hidden=!advModified;
+ const advModified=Object.entries(advancedDefaults).some(([id,v])=>+$(id).value!==+v);
+ $("advancedChip").hidden=!(advModified || $("resaleMode").value!=="curve" || +$("retainedCloud").value!==0);
+ $("resaleManualField").hidden=$("resaleMode").value!=="manual";
 }
 
 // Catalog strings are currently static, but escaping here prevents future catalog edits
@@ -438,7 +496,7 @@ function esc(value){
 const APP_STATE_KEY="local-ai-workstation-tool:v2";
 // v1 keys (unversioned payload) are treated as incompatible and ignored; the documented
 // defaults are used instead of guessing at an older schema.
-const persistedInputIds=["priceBasis","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","privacy","params","quant","overhead"];
+const persistedInputIds=["priceBasis","cloudSpend","usagePreset","daysWeek","cloudHours","tokensHour","includedTokens","overflowCost","years","elec","hours","privacy","params","quant","overhead","resaleMode","resalePercent","retainedCloud"];
 const advancedDefaults={elec:"0.20",hours:"4",privacy:"20"};
 
 const workloadPresets = {
@@ -508,10 +566,6 @@ function markUsageCustom(){
  }
 }
 
-function modelMemoryGB(){
- const p=+$("params").value, q=+$("quant").value, overhead=+$("overhead").value;
- return p*q + overhead;
-}
 function fitLabel(ram, need){
  const ratio=ram/need;
  if(ratio>=1.35) return ["Comfortable","good"];
@@ -519,45 +573,16 @@ function fitLabel(ram, need){
  if(ratio>=0.9) return ["Marginal","warn"];
  return ["No","bad"];
 }
-function expLabel(s, ram, need){
- // s is an estimated tokens/second; capping at 100 maps it onto the same scale as
- // the thresholds below (>=75 pleasant, >=45 usable), so faster-than-100 systems
- // cannot inflate the score and slow ones are judged as literal generation speed.
- const ratio=ram/need;
- let score=Math.min(100,s)*(ratio>=1.15?1:ratio>=1?0.75:ratio>=0.9?0.45:0.15);
- if(score>=75) return ["Pleasant","good"];
- if(score>=45) return ["Usable","warn"];
- return ["Frustrating","bad"];
+function readAssumptions(){
+ const a=Object.fromEntries(persistedInputIds.map(id=>[id,$(id).value]));
+ for(const id of persistedInputIds) if($(id).type==='range') a[id]=+a[id];
+ a.quant=+a.quant;
+ return a;
 }
-function lifecycle(s){
- // Energy deliberately covers AI-active compute only. Idle/sleep draw is excluded because
- // laptops, desktops and always-on servers have radically different idle behaviour. The
- // footer calls out this simplifying assumption so the local case is not mistaken for TCO.
- const yrs=+$("years").value, h=+$("hours").value, ep=+$("elec").value, resale=resaleFraction(yrs);
- const days=+$("daysWeek").value;
- const activeDaysPerYear=365.25*(days/7);
- const energy=(s.watts/1000)*h*activeDaysPerYear*yrs*ep;
- const purchase=effectivePrice(s.price);
- const net=purchase*(1-resale)+energy;
- return {energy,net,monthly:net/(yrs*12),purchase};
+function calculate(){ return CalculatorModel.calculate(readAssumptions(),scenarios); }
+function breakEvenLabel(b){
+ return !b ? 'Not in period' : b.atSale ? `At sale (${b.month} mo)` : `${b.month.toFixed(1)} mo`;
 }
-function cloudUsageMonthly(){
- const hours=+$("cloudHours").value;
- const tokensHour=+$("tokensHour").value;
- const included=+$("includedTokens").value;
- const overflowRate=+$("overflowCost").value;
- const activeDaysPerMonth=(365.25/12)*(+$("daysWeek").value/7);
- const tokens=hours*activeDaysPerMonth*tokensHour;
- const overflow=Math.max(0,tokens-included);
- // overflowRate is a NET API-equivalent price (the common way API rates are quoted).
- // Gross/personal mode therefore ADDS VAT; net/business mode uses it unchanged. This is
- // intentionally different from cloudSpend, which is entered as a gross subscription price.
- const overflowNet=(overflow/1e6)*overflowRate;
- const subscription=effectivePrice(+$("cloudSpend").value);
- const overflowEffective=priceFromNet(overflowNet);
- return {hours,tokens,included,overflow,overflowNet,overflowEffective,subscription,total:subscription+overflowEffective};
-}
-function cloudTotal(months){ return cloudUsageMonthly().total*months; }
 
 function priceCellLabel(){
  return $("priceBasis").value==="net" ? "Net price" : "Gross price";
@@ -591,7 +616,6 @@ function renderScenarioInputs(){
      <div class="scenario-cell"><div class="scenario-key">System RAM</div><div class="scenario-value">${s.ram} GB</div></div>
      <div class="scenario-cell"><div class="scenario-key">AI memory</div><div class="scenario-value">${s.aiMem} GB</div></div>
      <div class="scenario-cell"><div class="scenario-key">AI watts*</div><div class="scenario-value">~${s.watts} W</div></div>
-     <div class="scenario-cell"><div class="scenario-key">AI speed*</div><div class="scenario-value">${s.speed}</div></div>
    </div>`;
   c.appendChild(card);
  });
@@ -655,21 +679,8 @@ function drawCostWatermark(ctx,x,y,w,h){
  ctx.restore();
 }
 
-function truncLabel(text,maxPx){
- const str=String(text);
- for(let len=str.length;len>1;len--){
-   if(ctxMeasureLabel(str.slice(0,len))<=maxPx) return str.slice(0,len-1)+"\u2026";
- }
- return str;
-}
-let labelMeasureCtx=null;
-function ctxMeasureLabel(t){
- if(!labelMeasureCtx) labelMeasureCtx=document.createElement("canvas").getContext("2d");
- labelMeasureCtx.font="12px system-ui";
- return labelMeasureCtx.measureText(t).width;
-}
-
-function drawLines(canvas, series, maxY){
+const chartPalette=["#8ab4f8","#72d49b","#f0c36a","#d09cff","#ef7a7a"];
+function drawLines(canvas, series, maxY, months){
  const {ctx,w,h}=prepareCanvas(canvas);
  ctx.clearRect(0,0,w,h); ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
  const pad={l:58,r:20,t:20,b:38};
@@ -679,30 +690,28 @@ function drawLines(canvas, series, maxY){
   const y=pad.t+(h-pad.t-pad.b)*j/4;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
   const val=maxY*(1-j/4);ctx.fillText(fmt(val),5,y+4);
  }
- const months=(+$("years").value)*12;
  [0,months/2,months].forEach((m,idx)=>{
    const x=pad.l+(w-pad.l-pad.r)*(idx/2); ctx.fillText(Math.round(m)+"m",x-10,h-12);
  });
- const palette=["#8ab4f8","#72d49b","#f0c36a","#d09cff","#ef7a7a"];
  series.forEach((ser,si)=>{
-  ctx.strokeStyle=palette[si%palette.length];ctx.lineWidth=2.5;ctx.beginPath();
+  ctx.strokeStyle=chartPalette[si%chartPalette.length];ctx.lineWidth=2.5;ctx.beginPath();
   ser.points.forEach((p,idx)=>{
    const x=pad.l+(w-pad.l-pad.r)*(p.x/months);
    const y=pad.t+(h-pad.t-pad.b)*(1-p.y/maxY);
    idx?ctx.lineTo(x,y):ctx.moveTo(x,y);
   });ctx.stroke();
-  ctx.fillStyle=palette[si%palette.length];ctx.fillRect(w-195,pad.t+si*22,10,10);ctx.fillStyle="#cfd7df";ctx.fillText(truncLabel(ser.name,170),w-178,pad.t+9+si*22);
+
  });
 }
 
 function drawBars(canvas, need){
  const {ctx,w,h}=prepareCanvas(canvas);ctx.clearRect(0,0,w,h);ctx.fillStyle="#0e1216";ctx.fillRect(0,0,w,h);
- const pad={l:110,r:30,t:30,b:30}, max=Math.max(need*1.4,...scenarios.map(s=>s.aiMem))*1.05;
+ const pad={l:38,r:30,t:30,b:30}, max=Math.max(need*1.4,...scenarios.map(s=>s.aiMem))*1.05;
  const rowStep=(h-pad.t-pad.b)/Math.max(1,scenarios.length);
  const barH=Math.min(24,Math.max(14,rowStep-10));
  ctx.font="12px system-ui";
  scenarios.forEach((s,i)=>{
-   const y=pad.t+i*rowStep;ctx.fillStyle="#cfd7df";ctx.fillText(s.name.slice(0,16),8,y+barH*.72);
+   const y=pad.t+i*rowStep;ctx.fillStyle="#cfd7df";ctx.fillText(`S${i+1}`,8,y+barH*.72);
    ctx.fillStyle="#26303a";ctx.fillRect(pad.l,y,(w-pad.l-pad.r),barH);
    const bw=(w-pad.l-pad.r)*(s.aiMem/max);
    ctx.fillStyle=s.aiMem>=need*1.05?"#72d49b":s.aiMem>=need*.9?"#f0c36a":"#ef7a7a";
@@ -710,11 +719,12 @@ function drawBars(canvas, need){
  });
  const x=pad.l+(w-pad.l-pad.r)*(need/max);
  ctx.strokeStyle="#8ab4f8";ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x,pad.t-8);ctx.lineTo(x,h-pad.b);ctx.stroke();ctx.setLineDash([]);
- ctx.fillStyle="#8ab4f8";ctx.fillText("Target ≈ "+need.toFixed(0)+" GB",Math.min(x+6,w-120),16);
+ ctx.fillStyle="#8ab4f8";ctx.fillText("Target ≈ "+need.toFixed(1)+" GB",Math.min(x+6,w-120),16);
 }
 
 let lastRenderedBasis=null;
 function update(){
+ const result=calculate();
  refreshDisclosure();
  if($("priceBasis").value!==lastRenderedBasis){
    lastRenderedBasis=$("priceBasis").value;
@@ -735,60 +745,46 @@ function update(){
  $("yearsOut").textContent=(+$("years").value)+" years";
  $("elecOut").textContent="€"+(+$("elec").value).toFixed(2)+"/kWh";
  $("hoursOut").textContent=(+$("hours").value).toFixed(1)+" h/day";
- $("resaleOut").textContent=Math.round(resaleFraction(+$("years").value)*100)+"% after "+$("years").value+" years";
+ $("resaleOut").textContent=Math.round(result.resale*100)+"% after "+$("years").value+" years";
+ $("resalePercentOut").textContent=$("resalePercent").value+"%";
+ $("retainedCloudOut").textContent=$("retainedCloud").value+"%";
  $("privacyOut").textContent=fmt(+$("privacy").value)+"/mo";
  $("paramsOut").textContent=$("params").value+"B";
  $("overheadOut").textContent=$("overhead").value+" GB";
 
- const yrs=+$("years").value, months=yrs*12, need=modelMemoryGB(), cu=cloudUsageMonthly(), cloud=cloudTotal(months), privacy=(+$("privacy").value)*months;
- const rows=scenarios.map(s=>({s,...lifecycle(s)}));
- const best=[...rows].sort((a,b)=>(a.net-cloud-privacy)-(b.net-cloud-privacy))[0];
-
+ const {need,cloud,privacy,rows,bestLocal,winner}=result;
+ const yrs=+$("years").value;
  $("metrics").innerHTML=`
- <div class="metric"><div class="k">Target fast AI memory</div><div class="v">${need.toFixed(0)} GB</div><div class="s">${$("params").value}B with selected quant + overhead</div></div>
- <div class="metric"><div class="k">Cloud cost over period (${basisLabel()})</div><div class="v">${fmt(cloud)}</div><div class="s">${fmt(cu.total)}/mo incl. estimated overflow</div></div>
- <div class="metric"><div class="k">Estimated cloud usage</div><div class="v">${(cu.tokens/1e6).toFixed(1)}M</div><div class="s">tokens/month · ${(cu.overflow/1e6).toFixed(1)}M overflow · ${+$("daysWeek").value} d/wk</div></div>
- <div class="metric"><div class="k">Privacy/offline value</div><div class="v">${fmt(privacy)}</div><div class="s">Subjective benefit over ${yrs} years</div></div>
- <div class="metric"><div class="k">Cheapest adjusted option</div><div class="v">${esc(best.s.name)}</div><div class="s">After VAT basis, resale, power and your privacy value</div></div>`;
-
+ <div class="metric"><div class="k">Target fast AI memory (estimate)</div><div class="v">${need.toFixed(1)} GB</div><div class="s">${$("params").value}B with selected quant + overhead</div></div>
+ <div class="metric"><div class="k">Cloud cost over period (${basisLabel()})</div><div class="v">${fmt(cloud)}</div><div class="s">${fmt(result.cloudMonthly)}/mo incl. estimated overflow</div></div>
+ <div class="metric"><div class="k">Estimated cloud usage</div><div class="v">${(result.tokens/1e6).toFixed(1)}M</div><div class="s">tokens/month · ${(result.overflow/1e6).toFixed(1)}M overflow</div></div>
+ <div class="metric"><div class="k">Applied privacy/offline value</div><div class="v">${fmt(privacy)}</div><div class="s">Subjective benefit, reduced for retained cloud use</div></div>
+ <div class="metric"><div class="k">Lowest adjusted cost: cloud or memory-fit local</div><div class="v">${esc(winner.name)}</div><div class="s">${fmt(winner.cost)} after subjective privacy value; speed and quality unverified</div></div>`;
  const tb=$("tableBody");tb.innerHTML="";
- rows.forEach(r=>{
-  const fit=fitLabel(r.s.aiMem,need), exp=expLabel(r.s.speed,r.s.aiMem,need);
-  // Break-even must match the chart's local cost line: purchase + energy, with resale
-  // credited once at the end of the period. Crossover with the cloud line (whose monthly
-  // slope is cloud total + privacy) therefore uses energy-per-month, not the fully
-  // amortized r.monthly (which would double-count purchase and mis-credit resale).
-  const monthlyGap=(cu.total + +$("privacy").value) - r.energy/months;
-  const breakEven=monthlyGap>0 ? r.purchase/monthlyGap : Infinity;
+ rows.forEach((r,i)=>{
+  const fit=fitLabel(r.s.aiMem,need);
   const tr=document.createElement("tr");
-  tr.innerHTML=`<td>${esc(r.s.name)}</td><td>${r.s.ram} GB</td><td>${r.s.aiMem} GB</td><td>${fmt(r.net)}</td><td>${fmt(r.monthly)}</td>
-  <td>${isFinite(breakEven)?breakEven.toFixed(0)+" mo":"Never"}</td>
+  tr.innerHTML=`<td>S${i+1}: ${esc(r.s.name)}</td><td>${r.s.ram} GB</td><td>${r.s.aiMem} GB</td><td>${fmt(r.net)}</td><td>${fmt(r.monthly)}</td>
+  <td>${breakEvenLabel(r.breakEven)}</td>
   <td><span class="badge ${fit[1]}">${fit[0]}</span></td>
-  <td><span class="badge ${exp[1]}">${exp[0]}</span></td>`;
+  <td>${r.viable?'Unverified':'Below memory target'}</td>`;
   tb.appendChild(tr);
  });
-
- redrawCharts();
- const cheapestCost=Math.min(cloud,...rows.map(r=>r.net));
- const cheapestName=cloud===cheapestCost ? "Cloud" : esc(rows.find(r=>r.net===cheapestCost)?.s.name || "configured workstation");
- $("costChart").setAttribute("aria-label",`Cumulative cost comparison over ${yrs} years. Lowest modeled total is ${cheapestName} at approximately ${fmt(cheapestCost)}.`);
- $("ramChart").setAttribute("aria-label",`AI memory fit chart. Target is approximately ${need.toFixed(0)} GB. ${scenarios.map(s=>`${s.name}: ${s.aiMem} GB`).join("; ")}.`);
-
- const viable=rows.filter(r=>r.s.aiMem>=need*1.05).sort((a,b)=>a.net-b.net);
- let msg="";
- if(!viable.length){
-  msg=`Your selected ${$("params").value}B target needs roughly <b>${need.toFixed(0)} GB</b> with the assumptions above. None of the configured machines has enough comfortable headroom. Buying any of them specifically for this model would be a compromise before you even start arguing about speed.`;
+ redrawCharts(result);
+ const cashOptions=[{name:'Cloud',cost:cloud},...rows.filter(r=>r.viable).map(r=>({name:r.s.name,cost:r.net}))];
+ const cashBest=cashOptions.sort((a,b)=>a.cost-b.cost)[0];
+ $("costChart").setAttribute("aria-label",`Cash cost comparison over ${yrs} years. Lowest memory-fit or cloud total is ${cashBest.name} at approximately ${fmt(cashBest.cost)}. Resale credited at sale. Privacy excluded.`);
+ $("ramChart").setAttribute("aria-label",`Estimated memory target ${need.toFixed(1)} GB. ${scenarios.map((s,i)=>`S${i+1}: ${s.name}: ${s.aiMem} GB`).join('; ')}.`);
+ let msg=`Lowest adjusted modeled cost: <b>${esc(winner.name)}</b>. `;
+ if(!bestLocal){
+  msg+=`None of the selected machines meets the memory target with 5% headroom. Cloud is the only eligible modeled option. `;
  }else{
-  const v=viable[0], delta=v.net-cloud;
-  const cloudRate=cu.total, adjusted=cloud+privacy;
-  msg=`Using <b>${basisLabel().toLowerCase()} prices</b>, the cheapest machine that comfortably fits the target is <b>${esc(v.s.name)}</b>. Its estimated ownership cost is <b>${fmt(v.net)}</b> over ${yrs} years versus <b>${fmt(cloud)}</b> for cloud at roughly ${(cu.tokens/1e6).toFixed(1)}M tokens/month. `;
-  if(cu.overflow>0) msg+=`At the current assumptions, about <b>${(cu.overflow/1e6).toFixed(1)}M tokens/month</b> exceed the subscription-equivalent allowance, adding approximately <b>${fmt(cu.overflowEffective)}/month</b> in paid overflow. `;
-  else msg+=`The estimated workload remains inside the configured subscription-equivalent allowance, so no paid overflow is modeled. `;
-  if(v.net<=adjusted) msg+=`Once you assign ${fmt(+$("privacy").value)}/month of value to privacy/offline access, the local option becomes economically defensible under your assumptions.`;
-  else msg+=`Even after valuing privacy/offline access at ${fmt(+$("privacy").value)}/month, cloud remains cheaper by about <b>${fmt(v.net-adjusted)}</b>. In that case the workstation is primarily a capability/hobby purchase, not a cost-saving one.`;
-  const base=scenarios[0];
-  if(base.aiMem<need) msg+=` The base machine is fine as a client for cloud AI, but it is not a serious host for this target model.`;
+  msg+=`The least expensive memory-fit machine is <b>${esc(bestLocal.s.name)}</b>: <b>${fmt(bestLocal.net)}</b> in cash costs over ${yrs} years versus <b>${fmt(cloud)}</b> for cloud. `;
+  msg+=`Local cash costs include ${fmt(bestLocal.retained)} of retained cloud spending and a ${fmt(bestLocal.resaleCredit)} resale credit at sale. `;
+  msg+=`After ${fmt(privacy)} of subjective privacy/offline value, ${winner.local?'local has the lower adjusted cost':'cloud has the lower or equal adjusted cost'}. `;
  }
+ if(result.overflow>0) msg+=`Cloud includes ${fmt(result.overflowEffective)}/month of estimated paid overflow. `;
+ msg+=`<b>This is a conditional cost comparison.</b> Memory fit does not establish model quality, generation speed, runtime compatibility, or equivalent completed work. Validate your actual model and workflow before treating local hardware as a cloud replacement.`;
  $("decision").innerHTML=msg;
  saveState();
 }
@@ -805,28 +801,32 @@ function loadState(){
    const raw=localStorage.getItem(APP_STATE_KEY);
    if(!raw) return;
    const state=JSON.parse(raw);
-   if(state.version!==2) return;   for(const [id,value] of Object.entries(state.inputs||{})){
-     if($(id)) $(id).value=value;
+   if(state.version!==2 || !state.inputs || typeof state.inputs!=='object') return;
+   for(const id of persistedInputIds){
+    const el=$(id), value=state.inputs[id];
+    if(value===undefined) continue;
+    if(el.tagName==='SELECT'){
+     if([...el.options].some(o=>o.value===String(value))) el.value=String(value);
+    }else if(typeof value==='string' || typeof value==='number'){
+     const n=Number(value);
+     if(Number.isFinite(n) && n>=+el.min && n<=+el.max) el.value=String(n);
+    }
    }
-   if(Array.isArray(state.scenarioIds) && state.scenarioIds.length>0 && state.scenarioIds.length<=defaults.length){
+   if(Array.isArray(state.scenarioIds) && state.scenarioIds.length===defaults.length){
      const restored=state.scenarioIds.map(id=>workstationCatalog.find(x=>x.id===id));
      if(restored.every(Boolean)) scenarios=restored.map(x=>({...x}));
    }
-   // Persisted disclosure state wins so a returning user finds the panels as they left
-   // them; otherwise collapsed-by-default keeps the first visit simple.
    const disc=state.disclosure||{};
-   // A restored params/quant/overhead that differs from the preset's values must show
-   // as Custom, otherwise the summary text would misdescribe the active assumption.
-   const wp=workloadPresets[state.inputs&&state.inputs.usagePreset];
-   if(wp && ["params","quant","overhead","tokensHour"].some(k=>state.inputs[k]!==undefined && String(state.inputs[k])!==String(wp[k==="tokensHour"?"tokensHour":k])))
-     $("usagePreset").value="custom";
+   const wp=workloadPresets[$("usagePreset").value];
+   const presetInputs={params:'params',quant:'quant',overhead:'overhead',tokensHour:'tokensHour',hours:'hours',cloudHours:'hours',daysWeek:'days'};
+   if(wp && Object.entries(presetInputs).some(([id,key])=>+$(id).value!==+wp[key])) $("usagePreset").value='custom';
    if(disc.cloud!==undefined) $("cloudDetails").open=!!disc.cloud;
    if(disc.model!==undefined) $("modelDetails").open=!!disc.model;
    if(disc.advanced!==undefined) $("advancedDetails").open=!!disc.advanced;
  }catch(_){ /* Ignore corrupt/blocked storage and fall back to documented defaults. */ }
 }
 
-["priceBasis","cloudSpend","includedTokens","overflowCost","years","elec","privacy"].forEach(id=>$(id).addEventListener("input",update));
+["priceBasis","cloudSpend","includedTokens","overflowCost","years","elec","privacy","resaleMode","resalePercent","retainedCloud"].forEach(id=>$(id).addEventListener("input",update));
 $("usagePreset").addEventListener("change",e=>{
  if(e.target.value!=="custom") applyUsagePreset(e.target.value);
  else update();
@@ -837,33 +837,22 @@ $("usagePreset").addEventListener("change",e=>{
 ["cloudDetails","modelDetails","advancedDetails"].forEach(id=>{
  $(id).addEventListener("toggle",()=>saveState());
 });
-$("resetBtn").addEventListener("click",()=>{scenarios=defaults.map(x=>({...x}));renderScenarioInputs();update();});
-// Resetting to defaults also clears the advanced-cost overrides and re-collapses the
-// disclosure panels so the view matches a documented fresh start.
 $("resetBtn").addEventListener("click",()=>{
- Object.entries(advancedDefaults).forEach(([id,v])=>$(id).value=v);
+ scenarios=defaults.map(s=>({...s}));
+ for(const id of persistedInputIds){
+  const el=$(id);
+  el.value=el.tagName==='SELECT'?[...el.options].find(o=>o.defaultSelected)?.value||el.options[0].value:el.defaultValue;
+ }
  ["cloudDetails","modelDetails","advancedDetails"].forEach(id=>$(id).open=false);
+ renderScenarioInputs();
+ update();
 });
-function redrawCharts(){
- const months=(+$("years").value)*12, need=modelMemoryGB();
- const cu=cloudUsageMonthly();
- let series=[{name:"Cloud",points:[]}];
- for(let m=0;m<=months;m++) series[0].points.push({x:m,y:cu.total*m});
- const rows=scenarios.map(s=>({s,...lifecycle(s)}));
- rows.forEach(r=>{
-   const ser={name:r.s.name,points:[]};
-   const purchase=effectivePrice(r.s.price);
-   const resaleCredit=purchase*resaleFraction(+$("years").value);
-   for(let m=0;m<=months;m++){
-    const resaleAtEnd=(m===months)?resaleCredit:0;
-    const energy=r.energy*(m/months);
-    ser.points.push({x:m,y:purchase-resaleAtEnd+energy});
-   }
-   series.push(ser);
- });
+function redrawCharts(result=calculate()){
+ const {series,need,months}=result;
  const maxY=Math.max(...series.flatMap(s=>s.points.map(p=>p.y)))*1.08 || 1;
- drawLines($("costChart"),series,maxY);
+ drawLines($("costChart"),series,maxY,months);
  drawBars($("ramChart"),need);
+ $("costLegend").innerHTML=series.map((s,i)=>`<span><i class="legend-key" style="background:${chartPalette[i%chartPalette.length]}"></i>${i?'S'+i+': ':''}${esc(s.name)}</span>`).join('');
 }
 let resizeTimer;
 window.addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(redrawCharts,100);});
